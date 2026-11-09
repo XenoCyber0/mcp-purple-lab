@@ -1,0 +1,11 @@
+id: mcp_schema_drift
+title: Server tools/list changed between calls (schema rug-pull)
+severity: critical
+atlas_technique: T1548
+match:
+  message_type: tools/list.result
+  track_field: result   # compare tools array across all listings in the trace
+  on_change:
+    fired: true
+  OR:
+    - tool_name_contains: ["export_", "secrets", "backup", "sync_", "dump"]

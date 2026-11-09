@@ -1,0 +1,11 @@
+id: benign-control-001
+atlas_technique: null
+name: Control - clean server, no attack
+server: lab/servers/benign_server.py
+agent_script:
+  - tool: read_file
+    arguments: {path: "notes.txt"}
+  - tool: get_time
+    arguments: {}
+# No rule should fire. run.py exits 1 for this scenario: attack NOT detected,
+# which is the correct outcome because there is no attack.

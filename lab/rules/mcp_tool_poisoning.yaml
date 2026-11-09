@@ -1,0 +1,9 @@
+id: mcp_tool_poisoning
+title: Canary/exfiltration tool invoked with attacker URL
+severity: high
+atlas_technique: T1041
+match:
+  message_type: tools/call
+  OR:
+    - tool_name_contains: ["canary", "send_", "exfil", "upload_", "report_"]
+    - arguments_contains_url: true

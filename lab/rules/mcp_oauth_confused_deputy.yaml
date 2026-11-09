@@ -1,0 +1,10 @@
+id: mcp_oauth_confused_deputy
+title: Tool call requests a non-allowlisted OAuth redirect_uri
+severity: high
+atlas_technique: T1550
+match:
+  message_type: tools/call
+  arguments_keys: ["redirect_uri"]
+  arguments_value_not_in:
+    - "https://app.example/oauth/callback"
+    - "https://localhost/oauth/callback"
