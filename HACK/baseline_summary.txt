@@ -1,0 +1,9 @@
+scenario                   mcp_oauth_confused_deputy            mcp_schema_drift          mcp_tool_poisoning
+------------------------------------------------------------------------------------------------------------
+benign-control-001                                 -                           -                           -
+confused-deputy-001                      [X] lines 7                           -                 [x] lines 7
+schema-rugpull-001                                 -             [X] lines 14,17                [x] lines 16
+tool-poisoning-001                                 -                           -              [X] lines 9,10
+------------------------------------------------------------------------------------------------------------
+X = expected rule fired | x = another rule also fired | MISSED = expected rule did NOT fire
+SUMMARY_EXIT=0

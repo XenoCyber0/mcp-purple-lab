@@ -1,0 +1,27 @@
+test_empty_trace_fires_nothing (test_end_to_end.TestRuleEngine.test_empty_trace_fires_nothing) ... ok
+test_evidence_lines_exist (test_end_to_end.TestRuleEngine.test_evidence_lines_exist)
+Trace lines cited by a rule must exist in the trace file. ... ok
+test_benign_control_clean (test_end_to_end.TestScenarios.test_benign_control_clean) ... C:\Users\PC\Desktop\PC2.0\mcp-purple-lab\tests\test_end_to_end.py:28: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  report = runner.run_scenario(path, write_report=False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Users\PC\Desktop\PC2.0\mcp-purple-lab\tests\test_end_to_end.py:28: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='utf-8'>
+  report = runner.run_scenario(path, write_report=False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_confused_deputy_detected (test_end_to_end.TestScenarios.test_confused_deputy_detected) ... ok
+test_every_fired_rule_has_evidence (test_end_to_end.TestScenarios.test_every_fired_rule_has_evidence)
+A detection with no trace lines would be a fabricated detection. ... C:\Users\PC\Desktop\PC2.0\mcp-purple-lab\tests\test_end_to_end.py:65: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  report = runner.run_scenario(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+C:\Users\PC\Desktop\PC2.0\mcp-purple-lab\tests\test_end_to_end.py:65: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='utf-8'>
+  report = runner.run_scenario(
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_schema_rugpull_detected (test_end_to_end.TestScenarios.test_schema_rugpull_detected) ... ok
+test_tool_poisoning_detected (test_end_to_end.TestScenarios.test_tool_poisoning_detected) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.994s
+
+OK
+TEST_EXIT=0
