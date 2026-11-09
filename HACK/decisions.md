@@ -30,3 +30,82 @@ Where a tighter rule (Blue) makes a realistic attack (Red) undetectable: prefer 
 
 ## Decision record
 _(empty — filled as proposals are adjudicated)_
+
+---
+
+# FINISH round (v0.2) — aggregator decision record
+
+Baseline for this round: commit `10b609b` (checkpoint of the verified six-defect
+fixes + matching/report split). Invariants at baseline, run on this tree:
+
+    python lab/summary.py                      -> 3 attacks [X], control zero-fire, exit 0
+    python -m unittest discover -s tests       -> 7/7 OK
+    wc -l lab/*.py                             -> max 187 (mcp_client), CI cap 220
+    canary hygiene                             -> only localhost + *.example/*.invalid
+
+FINISH_GUIDE §0's "already fixed" table is real code on this tree. References
+were dispatched against `10b609b` with an explicit do-not-redo list.
+
+## Decision record
+
+D1 (process) — checkpoint before merge. The guide's "base commit" predated the
+matching.py/report.py split; committing it first (crouton, step5, hy3 all
+converged) means nothing rebases onto the old monolithic evaluate.py.
+
+D2 — rugpull_late (append-only rug-pull). Root cause (200-char excerpt tracking)
+was already closed by tools_sha256 (verified via HACK/aggregator/probe.py part
+D before and after the fix). Merge as a LOCK-IN scenario for the digest fix,
+gated on Red's live run showing mcp_schema_drift fires with line numbers.
+
+D3 — rugpull_notify (notifications/tools/list_changed). Merge only once
+McpClient handles JSON-RPC notifications (read-until-matching-id; record; and
+client-initiated re-list on tools/list_changed — behavior a real MCP client
+ owes anyway, per step5). Draft under HACK/aggregator/scratch/clientv2/;
+scenario must NOT also use after_each_call (double-list would double the
+drift signal).
+
+D4 — tool_poisoning_v2 (exfil destination arrives via get_settings tool
+result). NO current match key sees tool-result content, so the rule-level
+fix is out of scope for v0.2 (step5, crouton, hy3 agree). Accepted MINIMUM
+(this round): McpClient records the full result as `result` on
+tools/call.result (excerpt stays for humans only) — evidence capture without
+detection claims. The provenance rule (`arguments_url_seen_in_result`) ships
+in v0.3 with Blue's spec. Rationale: recording is two lines and makes the
+evasion auditable now; inventing a cross-line provenance engine inside a
+release sprint is where precision goes to die.
+
+D5 — rule split. Digest tracking made ANY mid-session tool addition a
+critical alert; a benign plugin registration would trip mcp_schema_drift.
+Split: mcp_schema_drift stays critical (drift AND suspicious tool call —
+schema-rugpull-001 keeps firing because the agent calls export_secrets);
+new informational mcp_schema_change fires on digest movement alone
+(requires new engine key `on_change`, evidence = first-seen + every change
+line). Gives the negative corpus a precise assertion.
+
+D6 — mcp_tool_poisoning branches. Branch 1 (canary/exfil/dump/export_ + URL)
+stays high: names that only mean "push data out". Branch 2 (send_/upload_/
+post_ + URL + payload key) over-fires on a legit upload_backup carrying
+`data` (Blue's required negative case 6). Pending Blue's run: either tighten
+payload keys to sensitive markers or downgrade branch 2 to confidence:
+medium. Precision beats recall (AGENTS.md 4); the corpus decides, not taste.
+
+D7 — arguments_value_not_in allowlist stays engine-side for v0.2. It reads
+trace content only (no scenario coupling, keeps evaluate() a pure function
+of trace+rule). Consequence recorded: a cross-server-confused-deputy scenario
+whose second server uses a non-localhost callback would FALSE-FIRE, so the
+§1b new attack is tools/list shadowing or tool-chain escalation; cross-server
+deputy is deferred with the multi-spawn harness (D8).
+
+D8 — new §1b attack = tools/list shadowing (single process, honest MCP
+traffic, no fake cross-server). Cross-server confused deputy requires
+multi-spawn client changes; deferred to v0.3 as part of harness.py (the guide
+marks harness itself a roadmap item; one clean entrypoint only).
+
+D9 — line budget. mcp_client.py is 187 and must absorb notification handling;
+CI fails at 220. Split transport out: lab/rpc_stdio.py (framing + id-routed
+read loop), mcp_client.py keeps MCP semantics. Draft first, measured, then
+merge — never merge-and-pray.
+
+Deferred for v0.2 (documented in README Limitations, not silently skipped):
+real-LLM driver (no-network constraint; opt-in only), SIEM/Sigma export,
+full harness API, source-of-argument provenance RULE, cross-server deputy.
