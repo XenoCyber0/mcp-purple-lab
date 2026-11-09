@@ -2,7 +2,14 @@
 """Minimal stdlib MCP client over stdio.
 
 Speaks just enough JSON-RPC 2.0 to run the lab: initialize, tools/list,
-tools/call. Every message is mirrored to a Trace.
+tools/call, and server-pushed notifications. Every message is mirrored to a
+Trace.
+
+Transport framing lives in rpc_stdio.StdioRpc: reads route by request id, so
+a server pushing notifications/tools/list_changed (spec-compliant) can no
+longer shift every later message by one. On list_changed the client re-lists
+(deferred, so a callback never re-enters the read loop); the re-list carries
+a fresh digest, which is what mcp_schema_drift consumes.
 
 No MCP SDK, no network, no LLM. Deterministic.
 """
@@ -20,6 +27,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from trace import Trace, excerpt  # noqa: E402
+from rpc_stdio import RpcError, StdioRpc  # noqa: E402
+
+LIST_CHANGED = "notifications/tools/list_changed"
 
 
 def resolve_command(cmd: str) -> list[str]:
@@ -55,10 +65,13 @@ class McpError(Exception):
 class McpClient:
     """A spawned MCP server we can call tools on."""
 
-    def __init__(self, server_cmd: str, trace: Trace, cwd: str | None = None):
+    def __init__(self, server_cmd: str, trace: Trace, cwd: str | None = None,
+                 rescan_on_list_changed: bool = True):
         self.trace = trace
         self._id = 0
         self._stderr_lines: list[str] = []
+        self._rescan_pending = False
+        self.rescan_on_list_changed = rescan_on_list_changed
         self.proc = subprocess.Popen(
             resolve_command(server_cmd),
             stdin=subprocess.PIPE,
@@ -73,6 +86,13 @@ class McpClient:
         # is indistinguishable from a real hang in CI.
         self._stderr_thread = threading.Thread(target=self._drain_stderr, daemon=True)
         self._stderr_thread.start()
+        # write+flush closure: an unflushed line never reaches the pipe and
+        # read_until blocks forever -- the old client flushed after every write.
+        def _write(line: str) -> None:
+            self.proc.stdin.write(line)
+            self.proc.stdin.flush()
+        self.rpc = StdioRpc(_write, self.proc.stdout.readline,
+                            on_notification=self._on_notification)
         self.tools: list[dict] = []
         self.initialize()
 
@@ -88,35 +108,33 @@ class McpClient:
     def stderr_tail(self, limit: int = 12) -> str:
         return " | ".join(self._stderr_lines[-limit:])
 
+    def _on_notification(self, msg: dict) -> None:
+        method = msg.get("method", "notification.unknown")
+        self.trace.record("in", method, params=msg.get("params"))
+        if method == LIST_CHANGED and self.rescan_on_list_changed:
+            self._rescan_pending = True
+
     # ---------- plumbing ----------
-
-    def _send(self, method: str, params: dict | None) -> None:
-        self._id += 1
-        msg = {"jsonrpc": "2.0", "id": self._id, "method": method}
-        if params is not None:
-            msg["params"] = params
-        self.proc.stdin.write(json.dumps(msg) + "\n")
-        self.proc.stdin.flush()
-
-    def _read(self) -> dict:
-        line = self.proc.stdout.readline()
-        if not line:
-            self._stderr_thread.join(timeout=1.0)
-            raise McpError(
-                f"server closed stdout. stderr: {self.stderr_tail()[:300]}")
-        try:
-            return json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise McpError(f"server sent non-JSON: {line[:200]!r}") from exc
 
     def request(self, method: str, params: dict | None = None,
                 enrich=None) -> dict:
         """enrich: optional callable(result) -> extra fields merged into the
         `.result` trace line. tools/list uses it to record the full tool list
         and its digest rather than only a truncated preview."""
-        self._send(method, params)
-        self.trace.record("out", method, id=self._id, params=excerpt(params or {}))
-        resp = self._read()
+        self._id += 1
+        rid = self._id
+        self.trace.record("out", method, id=rid, params=excerpt(params or {}))
+        msg = {"jsonrpc": "2.0", "id": rid, "method": method}
+        if params is not None:
+            msg["params"] = params
+        try:
+            self.rpc.send(msg)
+            resp = self.rpc.read_until(rid)
+        except OSError as exc:
+            raise McpError(f"write failed: {exc}") from exc
+        except RpcError as exc:
+            raise McpError(f"{method}: {exc}. "
+                           f"stderr: {self.stderr_tail()[:300]}") from exc
         if "error" in resp:
             self.trace.record("in", f"{method}.error", error=resp["error"])
             raise McpError(f"{method} failed: {resp['error']}")
@@ -125,14 +143,17 @@ class McpClient:
         if enrich:
             fields.update(enrich(result if isinstance(result, dict) else {}))
         self.trace.record("in", f"{method}.result", **fields)
+        # Deferred rescan: never re-enter the read loop from a callback.
+        if self._rescan_pending and method != "tools/list":
+            self._rescan_pending = False
+            self.list_tools(reason=LIST_CHANGED)
         return result
 
     def notify(self, method: str, params: dict | None = None) -> None:
         msg = {"jsonrpc": "2.0", "method": method}
         if params is not None:
             msg["params"] = params
-        self.proc.stdin.write(json.dumps(msg) + "\n")
-        self.proc.stdin.flush()
+        self.rpc.send(msg)
         self.trace.record("out", f"notification.{method}",
                           params=excerpt(params or {}))
 
@@ -146,12 +167,15 @@ class McpClient:
         })
         self.notify("notifications/initialized")
 
-    def list_tools(self) -> list[dict]:
+    def list_tools(self, reason: str | None = None) -> list[dict]:
         def enrich(result: dict) -> dict:
             tools = result.get("tools", [])
-            return {"tool_names": [t.get("name") for t in tools],
-                    "tools": tools,
-                    "tools_sha256": tools_digest(tools)}
+            fields = {"tool_names": [t.get("name") for t in tools],
+                      "tools": tools,
+                      "tools_sha256": tools_digest(tools)}
+            if reason:
+                fields["reason"] = reason
+            return fields
         result = self.request("tools/list", enrich=enrich)
         self.tools = result.get("tools", [])
         return self.tools
@@ -159,20 +183,28 @@ class McpClient:
     def call_tool(self, name: str, arguments: dict) -> dict:
         self.trace.record("out", "tools/call", tool=name, arguments=arguments,
                           ts=int(time.time() * 1000))
-        self._send("tools/call", {"name": name, "arguments": arguments})
-        resp = self._read()
+        self._id += 1
+        rid = self._id
+        try:
+            self.rpc.send({"jsonrpc": "2.0", "id": rid, "method": "tools/call",
+                           "params": {"name": name, "arguments": arguments}})
+            resp = self.rpc.read_until(rid)
+        except OSError as exc:
+            raise McpError(f"write failed: {exc}") from exc
+        except RpcError as exc:
+            raise McpError(f"tools/call {name}: {exc}") from exc
         result = resp.get("result") or {"isError": True, "content": resp.get("error")}
+        # `result` is the FULL payload: the evidence layer for provenance
+        # rules (D4). `result_excerpt` stays for humans only, never an input.
         self.trace.record("in", "tools/call.result", tool=name,
                           isError=bool(result.get("isError")),
-                          result_excerpt=excerpt(result))
+                          result=result, result_excerpt=excerpt(result))
+        if self._rescan_pending:
+            self._rescan_pending = False
+            self.list_tools(reason=LIST_CHANGED)
         return result
 
     def close(self) -> None:
-        """Close every pipe and join the drain thread.
-
-        Leaking stdout/stderr emitted a ResourceWarning per scenario run and,
-        on Windows, held the child's file map open until the GC got to it.
-        """
         for pipe in (self.proc.stdin, self.proc.stdout, self.proc.stderr):
             try:
                 if pipe and not pipe.closed:
