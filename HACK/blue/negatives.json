@@ -1,0 +1,1286 @@
+{
+  "_assertions_for_test_negatives_py": {
+    "engine_sanity_gates": [
+      "assert len(rules) == 3 and ids == [mcp_oauth_confused_deputy, mcp_schema_drift, mcp_tool_poisoning] -- a zero from a broken harness proves nothing",
+      "assert at least one positive from attack_cases.json fires its intended rule in the same run",
+      "assert verify_trace(case) is ok for every case"
+    ],
+    "fragile_zero_fire": {
+      "case6_upload_backup_full": "zero today ONLY because arguments_keys ANDs all five payload keys; the same semantics misses send_backup_snapshot{url,data} (F2). Any ANY-of-payload tightening re-fires this case unless the endpoint-allowlist NOT clause lands too (proposed_rules/mcp_tool_poisoning.yaml)"
+    },
+    "known_fp_exemptions": {
+      "neg_oauth_allowlisted_localhost": {
+        "fires": [
+          "mcp_oauth_confused_deputy"
+        ],
+        "reason": "finding F1: arguments_value_not_in is EXACT string membership; the allowlist holds https://localhost/oauth/callback but RFC 8252 loopback redirects carry a port + query. Fix: proposed_rules/mcp_oauth_confused_deputy.yaml",
+        "verdict": "fires_needs_rule_change"
+      }
+    },
+    "zero_fire_cases": [
+      "case6_upload_backup_full",
+      "neg_legit_fetch_doc",
+      "neg_list_changed_notification",
+      "neg_oauth_allowlisted_prod",
+      "neg_send_report_no_url",
+      "neg_tools_list_reorder",
+      "neg_upload_backup_no_payload"
+    ]
+  },
+  "_meta": {
+    "baseline_commit": "10b609b (FINISH v0.2 worktree @ 921f66a docs)",
+    "generated_by": "HACK/blue/build_corpus.py",
+    "invariants": [
+      "every case fires ZERO rules except case6_upload_backup_full (documented false positive, finding F1)",
+      "every trace passes lab.trace.verify_trace",
+      "tools_sha256 on every tools/list.result re-derivable from the line's own `tools` field with canonical name-sorted json (harness re-checks)"
+    ],
+    "rules_evaluated": [
+      "mcp_oauth_confused_deputy",
+      "mcp_schema_drift",
+      "mcp_tool_poisoning"
+    ],
+    "ruleset_sha256": "3ef8bfbea8aee00eb4b8cc6ce4a3fc8b8c4b9d0ba0e96c425b26f2f7dc8f22f7"
+  },
+  "cases": {
+    "case6_upload_backup_full": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "639b1a4923e7f73ec1996962cb9394748ecad73bf4755675bad6d4e452d9a6fd",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"backup-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "07c335c1409c6c5977a8b03886242699bf76a50a3546ed326a5945465bc335f1",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "639b1a4923e7f73ec1996962cb9394748ecad73bf4755675bad6d4e452d9a6fd",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "9d080f4a5715c56233402ed56f0138b78f7e641f4ed90b988f74c3fd09fcde1f",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "07c335c1409c6c5977a8b03886242699bf76a50a3546ed326a5945465bc335f1",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "d78a847eef2b76d8b91b67820e756ec8a9d7536c9be5c349aa5ba9b44960c1c5",
+          "message_type": "tools/list.result",
+          "prev_hash": "9d080f4a5715c56233402ed56f0138b78f7e641f4ed90b988f74c3fd09fcde1f",
+          "result": "{\"tools\": [{\"name\": \"upload_backup\", \"description\": \"Upload a workspace backup bundle to the backup service.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\"}, \"backup_id...",
+          "seq": 5,
+          "tool_names": [
+            "upload_backup",
+            "list_backups"
+          ],
+          "tools": [
+            {
+              "description": "Upload a workspace backup bundle to the backup service.",
+              "inputSchema": {
+                "properties": {
+                  "backup_id": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url",
+                  "backup_id"
+                ],
+                "type": "object"
+              },
+              "name": "upload_backup"
+            },
+            {
+              "description": "List recent backups.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "list_backups"
+            }
+          ],
+          "tools_sha256": "628cb304335877b6ceb2c333398790ceb26caa65c92706419a3234273ef2d6f8"
+        },
+        {
+          "dir": "lab",
+          "hash": "4a483a5ea6eceea187148906eb9eec047635989d3d15e4ab362ed8d4cc71409e",
+          "message_type": "server_started",
+          "prev_hash": "d78a847eef2b76d8b91b67820e756ec8a9d7536c9be5c349aa5ba9b44960c1c5",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors backup-server)",
+          "tools": [
+            "upload_backup",
+            "list_backups"
+          ]
+        },
+        {
+          "arguments": {
+            "backup_id": "b-42",
+            "payload": "<workspace archive bytes>",
+            "url": "https://app.example/upload"
+          },
+          "dir": "out",
+          "hash": "efebe84367bd9ec32826e4eba0e489f57edb7fe0cd58547aa4ca96386ab4e4b8",
+          "message_type": "tools/call",
+          "prev_hash": "4a483a5ea6eceea187148906eb9eec047635989d3d15e4ab362ed8d4cc71409e",
+          "seq": 7,
+          "tool": "upload_backup",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "1bbdeee02d6a790c01cd13007920eb79ece52e57a2cad29e2dff1e9cd2eadb13",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "efebe84367bd9ec32826e4eba0e489f57edb7fe0cd58547aa4ca96386ab4e4b8",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "upload_backup"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 8,
+      "near_miss_of": "mcp_tool_poisoning",
+      "neutralized_signal": "(none available -- this is the residual: no single-line tightening in the current key set separates it from exfil; see findings F1 and proposed_rules/)",
+      "rationale": "Legitimate backup upload to the product's own endpoint. Same (name, url-present, payload-key) shape as exfil: the ONLY discriminator available to the current rule is the hostname, which the rule cannot enumerate for defenders without turning into a denylist.",
+      "trace_file": "HACK/blue/traces/case6_upload_backup_full.jsonl"
+    },
+    "neg_legit_fetch_doc": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "6d67908c2c2292718e7b701f623892ea03f177e100881688206f5f8a28ce80b3",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"docs-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "8615ea9b84e261ce6e82f83b56fcdb62db425e8daa5e6dbeb52c93b9b13fa4c2",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "6d67908c2c2292718e7b701f623892ea03f177e100881688206f5f8a28ce80b3",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "ca0705ae048b73859cf9da13782f98e90a0235035ff5ea91afa0c78aeacf4740",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "8615ea9b84e261ce6e82f83b56fcdb62db425e8daa5e6dbeb52c93b9b13fa4c2",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "7fcbfad4d80133d2295aa767dddb9a2d4cbb9aceb92b75ca2b73f27a315efe41",
+          "message_type": "tools/list.result",
+          "prev_hash": "ca0705ae048b73859cf9da13782f98e90a0235035ff5ea91afa0c78aeacf4740",
+          "result": "{\"tools\": [{\"name\": \"fetch_doc\", \"description\": \"Fetch a documentation page from the workspace site.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\"}}, \"required\": [\"url...",
+          "seq": 5,
+          "tool_names": [
+            "fetch_doc",
+            "search_notes"
+          ],
+          "tools": [
+            {
+              "description": "Fetch a documentation page from the workspace site.",
+              "inputSchema": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "type": "object"
+              },
+              "name": "fetch_doc"
+            },
+            {
+              "description": "Search workspace notes.",
+              "inputSchema": {
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "search_notes"
+            }
+          ],
+          "tools_sha256": "838d73dc973d06d71c2fce838fdc3bcb93aaadc0207691af785b65b6a84abceb"
+        },
+        {
+          "dir": "lab",
+          "hash": "439cfd398671bf7b8dae5661e3604e3f7c7a32d24df803b5b52c897964448cf3",
+          "message_type": "server_started",
+          "prev_hash": "7fcbfad4d80133d2295aa767dddb9a2d4cbb9aceb92b75ca2b73f27a315efe41",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors docs-server)",
+          "tools": [
+            "fetch_doc",
+            "search_notes"
+          ]
+        },
+        {
+          "arguments": {
+            "url": "https://app.example/docs/intro"
+          },
+          "dir": "out",
+          "hash": "17be2bb1a5b536f7ccf72033193a611e6433f77cd3b9d9c8885679777992dec5",
+          "message_type": "tools/call",
+          "prev_hash": "439cfd398671bf7b8dae5661e3604e3f7c7a32d24df803b5b52c897964448cf3",
+          "seq": 7,
+          "tool": "fetch_doc",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "72b201a53efa9f4e459187c8bec8eb37a4ae8cf69241ae5743ecbd17647946f5",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "17be2bb1a5b536f7ccf72033193a611e6433f77cd3b9d9c8885679777992dec5",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "fetch_doc"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 8,
+      "near_miss_of": "mcp_tool_poisoning",
+      "neutralized_signal": "tool name carries no transfer verb (canary/exfil/dump/export_/send_/upload_/post_)",
+      "rationale": "Documentation fetch is the single most common benign MCP call shape: a URL in arguments that is a source, not a destination.",
+      "trace_file": "HACK/blue/traces/neg_legit_fetch_doc.jsonl"
+    },
+    "neg_list_changed_notification": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "6d67908c2c2292718e7b701f623892ea03f177e100881688206f5f8a28ce80b3",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"docs-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "8615ea9b84e261ce6e82f83b56fcdb62db425e8daa5e6dbeb52c93b9b13fa4c2",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "6d67908c2c2292718e7b701f623892ea03f177e100881688206f5f8a28ce80b3",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "ca0705ae048b73859cf9da13782f98e90a0235035ff5ea91afa0c78aeacf4740",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "8615ea9b84e261ce6e82f83b56fcdb62db425e8daa5e6dbeb52c93b9b13fa4c2",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "7fcbfad4d80133d2295aa767dddb9a2d4cbb9aceb92b75ca2b73f27a315efe41",
+          "message_type": "tools/list.result",
+          "prev_hash": "ca0705ae048b73859cf9da13782f98e90a0235035ff5ea91afa0c78aeacf4740",
+          "result": "{\"tools\": [{\"name\": \"fetch_doc\", \"description\": \"Fetch a documentation page from the workspace site.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\"}}, \"required\": [\"url...",
+          "seq": 5,
+          "tool_names": [
+            "fetch_doc",
+            "search_notes"
+          ],
+          "tools": [
+            {
+              "description": "Fetch a documentation page from the workspace site.",
+              "inputSchema": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "type": "object"
+              },
+              "name": "fetch_doc"
+            },
+            {
+              "description": "Search workspace notes.",
+              "inputSchema": {
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "search_notes"
+            }
+          ],
+          "tools_sha256": "838d73dc973d06d71c2fce838fdc3bcb93aaadc0207691af785b65b6a84abceb"
+        },
+        {
+          "dir": "lab",
+          "hash": "e3d89635bda3cde4d73898b0daf5fa3636e92f32cdb0f299b8540284f293d7ae",
+          "message_type": "server_started",
+          "prev_hash": "7fcbfad4d80133d2295aa767dddb9a2d4cbb9aceb92b75ca2b73f27a315efe41",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic)",
+          "tools": [
+            "fetch_doc",
+            "search_notes"
+          ]
+        },
+        {
+          "arguments": {
+            "url": "https://app.example/docs/intro"
+          },
+          "dir": "out",
+          "hash": "b87b0bef0627f392f8317f632a1ed988c180d833ce42016f66e08064dfa77c45",
+          "message_type": "tools/call",
+          "prev_hash": "e3d89635bda3cde4d73898b0daf5fa3636e92f32cdb0f299b8540284f293d7ae",
+          "seq": 7,
+          "tool": "fetch_doc",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "edfb954953d6dfd152735c391aaa428df9d5361d6f3793534f7489633cacc5b7",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "b87b0bef0627f392f8317f632a1ed988c180d833ce42016f66e08064dfa77c45",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "fetch_doc"
+        },
+        {
+          "dir": "in",
+          "hash": "fd84d5098b9ce2f997e6d180b4548c33e7136e1221e0286ce49a39b58addc817",
+          "message_type": "notifications/tools/list_changed",
+          "params": "{}",
+          "prev_hash": "edfb954953d6dfd152735c391aaa428df9d5361d6f3793534f7489633cacc5b7",
+          "seq": 9
+        },
+        {
+          "arguments": {
+            "query": "roadmap"
+          },
+          "dir": "out",
+          "hash": "d7c244594f0d58152cf61c1cde6fdf18b9d39640a43ff382e5430a049e6df9f7",
+          "message_type": "tools/call",
+          "prev_hash": "fd84d5098b9ce2f997e6d180b4548c33e7136e1221e0286ce49a39b58addc817",
+          "seq": 10,
+          "tool": "search_notes",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "11308712d7aa06a734ee34d531c8ee1dc9b0d27c3191f0480c77f0042679d2c7",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "d7c244594f0d58152cf61c1cde6fdf18b9d39640a43ff382e5430a049e6df9f7",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 11,
+          "tool": "search_notes"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 11,
+      "near_miss_of": "mcp_schema_drift",
+      "neutralized_signal": "no second tools/list.result at all, so track_field(tools_sha256) sees no change; line is not message_type tools/call or tools/list.result, so no rule matches it at all",
+      "note": "client never records inbound notifications today; this line is the proposed spec shape, documented in findings.md F3",
+      "rationale": "MCP spec: the server MAY send notifications/tools/list_changed at any time; a plain notification with no payload is housekeeping, not drift. Drift is a CHANGED tools/list.result digest.",
+      "trace_file": "HACK/blue/traces/neg_list_changed_notification.jsonl"
+    },
+    "neg_oauth_allowlisted_localhost": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "056f797a894dd50a9721248a46293a4c70eccc58754166b03cc9b8c4dc5bd420",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"auth-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "5710fed6f6f9ec7ff0117691ea71269208d573d05579fd14dba1d3bc58c7b3b6",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "056f797a894dd50a9721248a46293a4c70eccc58754166b03cc9b8c4dc5bd420",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "7b8c86ba75891ad4b4667e153cb6909b17ab7924947f21ba3126d4d060812eeb",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "5710fed6f6f9ec7ff0117691ea71269208d573d05579fd14dba1d3bc58c7b3b6",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "0d26bade1a5ef7dbcabdab66d8ce82e8d69c9010d3c7bbf22ea416a99d5bbbd0",
+          "message_type": "tools/list.result",
+          "prev_hash": "7b8c86ba75891ad4b4667e153cb6909b17ab7924947f21ba3126d4d060812eeb",
+          "result": "{\"tools\": [{\"name\": \"login\", \"description\": \"Start OAuth login for the connected account.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"redirect_uri\": {\"type\": \"string\"}}, \"required\": [\"redir...",
+          "seq": 5,
+          "tool_names": [
+            "login",
+            "read_profile"
+          ],
+          "tools": [
+            {
+              "description": "Start OAuth login for the connected account.",
+              "inputSchema": {
+                "properties": {
+                  "redirect_uri": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "redirect_uri"
+                ],
+                "type": "object"
+              },
+              "name": "login"
+            },
+            {
+              "description": "Read the connected user's profile.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "read_profile"
+            }
+          ],
+          "tools_sha256": "ff742c541b42b37c1e00ea6095275c9e965c1dbda5ac9e24c6c7e9043a973d9c"
+        },
+        {
+          "dir": "lab",
+          "hash": "7e1d0361e072ec09dfb49dfa3a14ed95215995c3d4935b13d226b597e28f37c1",
+          "message_type": "server_started",
+          "prev_hash": "0d26bade1a5ef7dbcabdab66d8ce82e8d69c9010d3c7bbf22ea416a99d5bbbd0",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors auth-server)",
+          "tools": [
+            "login",
+            "read_profile"
+          ]
+        },
+        {
+          "arguments": {
+            "redirect_uri": "http://localhost:8000/oauth/callback?code=ok"
+          },
+          "dir": "out",
+          "hash": "55b25010aa37e384b14b3f44f66b03d6a60943940ebc4702fce0eb32ebd180df",
+          "message_type": "tools/call",
+          "prev_hash": "7e1d0361e072ec09dfb49dfa3a14ed95215995c3d4935b13d226b597e28f37c1",
+          "seq": 7,
+          "tool": "login",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "f1c3923ba92e308ee974624766c5e9f08c94bae5028a5995a5eba3a5ec6a2f81",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "55b25010aa37e384b14b3f44f66b03d6a60943940ebc4702fce0eb32ebd180df",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "login"
+        },
+        {
+          "arguments": {},
+          "dir": "out",
+          "hash": "90bf0650e61d771a325f7f1ac35e43c72b80bdc66bc55bc2cb4ab8cf70873e92",
+          "message_type": "tools/call",
+          "prev_hash": "f1c3923ba92e308ee974624766c5e9f08c94bae5028a5995a5eba3a5ec6a2f81",
+          "seq": 9,
+          "tool": "read_profile",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "c0ce2e34b18275681a99c6221dfddcd671b5b46a07e8cca22468593fba71a6e0",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "90bf0650e61d771a325f7f1ac35e43c72b80bdc66bc55bc2cb4ab8cf70873e92",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 10,
+          "tool": "read_profile"
+        }
+      ],
+      "fired_by_current_rules": [
+        "mcp_oauth_confused_deputy"
+      ],
+      "fires_current": [
+        "mcp_oauth_confused_deputy"
+      ],
+      "line_count": 10,
+      "near_miss_of": "mcp_oauth_confused_deputy",
+      "neutralized_signal": "redirect_uri value is an allowlist entry",
+      "rationale": "loopback OAuth callback with a query string: the standard native-app/desktop-app redirect shape",
+      "trace_file": "HACK/blue/traces/neg_oauth_allowlisted_localhost.jsonl",
+      "verdict_current": "fires_needs_rule_change"
+    },
+    "neg_oauth_allowlisted_prod": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "056f797a894dd50a9721248a46293a4c70eccc58754166b03cc9b8c4dc5bd420",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"auth-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "5710fed6f6f9ec7ff0117691ea71269208d573d05579fd14dba1d3bc58c7b3b6",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "056f797a894dd50a9721248a46293a4c70eccc58754166b03cc9b8c4dc5bd420",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "7b8c86ba75891ad4b4667e153cb6909b17ab7924947f21ba3126d4d060812eeb",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "5710fed6f6f9ec7ff0117691ea71269208d573d05579fd14dba1d3bc58c7b3b6",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "0d26bade1a5ef7dbcabdab66d8ce82e8d69c9010d3c7bbf22ea416a99d5bbbd0",
+          "message_type": "tools/list.result",
+          "prev_hash": "7b8c86ba75891ad4b4667e153cb6909b17ab7924947f21ba3126d4d060812eeb",
+          "result": "{\"tools\": [{\"name\": \"login\", \"description\": \"Start OAuth login for the connected account.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"redirect_uri\": {\"type\": \"string\"}}, \"required\": [\"redir...",
+          "seq": 5,
+          "tool_names": [
+            "login",
+            "read_profile"
+          ],
+          "tools": [
+            {
+              "description": "Start OAuth login for the connected account.",
+              "inputSchema": {
+                "properties": {
+                  "redirect_uri": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "redirect_uri"
+                ],
+                "type": "object"
+              },
+              "name": "login"
+            },
+            {
+              "description": "Read the connected user's profile.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "read_profile"
+            }
+          ],
+          "tools_sha256": "ff742c541b42b37c1e00ea6095275c9e965c1dbda5ac9e24c6c7e9043a973d9c"
+        },
+        {
+          "dir": "lab",
+          "hash": "7e1d0361e072ec09dfb49dfa3a14ed95215995c3d4935b13d226b597e28f37c1",
+          "message_type": "server_started",
+          "prev_hash": "0d26bade1a5ef7dbcabdab66d8ce82e8d69c9010d3c7bbf22ea416a99d5bbbd0",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors auth-server)",
+          "tools": [
+            "login",
+            "read_profile"
+          ]
+        },
+        {
+          "arguments": {
+            "redirect_uri": "https://app.example/oauth/callback"
+          },
+          "dir": "out",
+          "hash": "5dd7e85b491737013832877c556a190509567a4fe352d6bd1f50a91ff67ac2b6",
+          "message_type": "tools/call",
+          "prev_hash": "7e1d0361e072ec09dfb49dfa3a14ed95215995c3d4935b13d226b597e28f37c1",
+          "seq": 7,
+          "tool": "login",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "4ecd0fabd5d2c6c82edc8daaa994b0a94152ab6fc72466b44ea81f3296e45561",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "5dd7e85b491737013832877c556a190509567a4fe352d6bd1f50a91ff67ac2b6",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "login"
+        },
+        {
+          "arguments": {},
+          "dir": "out",
+          "hash": "154ab79cd73d2f756eca179c2ed5eb6cc70d0340ebc9eb9a8767aea823897443",
+          "message_type": "tools/call",
+          "prev_hash": "4ecd0fabd5d2c6c82edc8daaa994b0a94152ab6fc72466b44ea81f3296e45561",
+          "seq": 9,
+          "tool": "read_profile",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "70dd6dce5361eb6422951dde6d76cdd18483398d0deec638fe9f1c86d79b39d2",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "154ab79cd73d2f756eca179c2ed5eb6cc70d0340ebc9eb9a8767aea823897443",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 10,
+          "tool": "read_profile"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 10,
+      "near_miss_of": "mcp_oauth_confused_deputy",
+      "neutralized_signal": "redirect_uri value is an allowlist entry",
+      "rationale": "the exact production allowlist entry",
+      "trace_file": "HACK/blue/traces/neg_oauth_allowlisted_prod.jsonl"
+    },
+    "neg_send_report_no_url": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "c27ec57977a84dd2d6241427c5991a9ef1a332191f6ac7c67aea3c5519cf6d11",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"reports-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "537c242111e020198e40b2490ceec62899120abc54d797a22847ca728df6013b",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "c27ec57977a84dd2d6241427c5991a9ef1a332191f6ac7c67aea3c5519cf6d11",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "a23cb9005f57f53fda48596b9fd2df817dfa3734eb4f6492b84c4c384e6f1649",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "537c242111e020198e40b2490ceec62899120abc54d797a22847ca728df6013b",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "bc554be4c438eca29f1b696bf28b2ac7d61071528afe674fbe1367124275969b",
+          "message_type": "tools/list.result",
+          "prev_hash": "a23cb9005f57f53fda48596b9fd2df817dfa3734eb4f6492b84c4c384e6f1649",
+          "result": "{\"tools\": [{\"name\": \"list_reports\", \"description\": \"List stored reports.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}, \"required\": []}}, {\"name\": \"send_report\", \"description\": \"Email an alr...",
+          "seq": 5,
+          "tool_names": [
+            "list_reports",
+            "send_report"
+          ],
+          "tools": [
+            {
+              "description": "List stored reports.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "list_reports"
+            },
+            {
+              "description": "Email an already-generated report to its owner.",
+              "inputSchema": {
+                "properties": {
+                  "report_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "report_id"
+                ],
+                "type": "object"
+              },
+              "name": "send_report"
+            }
+          ],
+          "tools_sha256": "57ea3de09290b601e9a715b48a59bbd2c96adf81ba3607650959dda67eef95cf"
+        },
+        {
+          "dir": "lab",
+          "hash": "6371b9f83941b357d13713e93e353292e7b5e29f6dbece79814f10a7ccb0e009",
+          "message_type": "server_started",
+          "prev_hash": "bc554be4c438eca29f1b696bf28b2ac7d61071528afe674fbe1367124275969b",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors reports-server)",
+          "tools": [
+            "list_reports",
+            "send_report"
+          ]
+        },
+        {
+          "arguments": {},
+          "dir": "out",
+          "hash": "237b69bd3ce492b0af30cd85f03c483251948837c8f872ef3e4296b7973fc174",
+          "message_type": "tools/call",
+          "prev_hash": "6371b9f83941b357d13713e93e353292e7b5e29f6dbece79814f10a7ccb0e009",
+          "seq": 7,
+          "tool": "list_reports",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "f1934a59f523b949ad6b173efad9ac6cb1bc1222deeb167df69ccba895090e27",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "237b69bd3ce492b0af30cd85f03c483251948837c8f872ef3e4296b7973fc174",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "list_reports"
+        },
+        {
+          "arguments": {
+            "report_id": "r-1"
+          },
+          "dir": "out",
+          "hash": "cff10fd9f3e20aae8ba429ed0858fe2c20f2d1be9ea7d281be38f8262913afd9",
+          "message_type": "tools/call",
+          "prev_hash": "f1934a59f523b949ad6b173efad9ac6cb1bc1222deeb167df69ccba895090e27",
+          "seq": 9,
+          "tool": "send_report",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "b3f327ee4d7a86d8d1fd2ea4efff759886cb1924c109d97f80de9aec910a8336",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "cff10fd9f3e20aae8ba429ed0858fe2c20f2d1be9ea7d281be38f8262913afd9",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 10,
+          "tool": "send_report"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 10,
+      "near_miss_of": "mcp_tool_poisoning",
+      "neutralized_signal": "no http(s) URL in arguments (arguments_contains_url is the failed sibling)",
+      "rationale": "Exfil is destination + payload transfer. A report id with no URL anywhere in arguments is a lookup, not an outbound post.",
+      "trace_file": "HACK/blue/traces/neg_send_report_no_url.jsonl"
+    },
+    "neg_tools_list_reorder": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "5b3be348ce301238beb492954baad8e20f13191c11b165925def3e45d782b093",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"workspace-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "aa3a2a75a5f5dc5a544cab80c582583a0f750532247487530eb41c5d49dc7de7",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "5b3be348ce301238beb492954baad8e20f13191c11b165925def3e45d782b093",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "b528c9c89554b2cc6db1b30ebf38bed3a7638c912187bd8ae2c0ad947adcc25b",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "aa3a2a75a5f5dc5a544cab80c582583a0f750532247487530eb41c5d49dc7de7",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "8cefde0c2a1a28c60985d38cc49526fa39243fec80a5f93e6e538847894522d1",
+          "message_type": "tools/list.result",
+          "prev_hash": "b528c9c89554b2cc6db1b30ebf38bed3a7638c912187bd8ae2c0ad947adcc25b",
+          "result": "{\"tools\": [{\"name\": \"read_file\", \"description\": \"Read a file from the workspace.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\"}}, \"required\": [\"path\"]}}, {\"name\": \"sy...",
+          "seq": 5,
+          "tool_names": [
+            "read_file",
+            "sync_notes",
+            "get_time"
+          ],
+          "tools": [
+            {
+              "description": "Read a file from the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              },
+              "name": "read_file"
+            },
+            {
+              "description": "Sync local note state back to the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "sync_notes"
+            },
+            {
+              "description": "Return the server's current time.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "get_time"
+            }
+          ],
+          "tools_sha256": "af9b25a79c6c77986e44490402cc0d48c308210f424ee8d2db9e98c83009c391"
+        },
+        {
+          "dir": "lab",
+          "hash": "907b87ba579e72bee6fce9a6b7c853f7cb4764d27952de29c7b39da0e41e4df2",
+          "message_type": "server_started",
+          "prev_hash": "8cefde0c2a1a28c60985d38cc49526fa39243fec80a5f93e6e538847894522d1",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic)",
+          "tools": [
+            "read_file",
+            "sync_notes",
+            "get_time"
+          ]
+        },
+        {
+          "arguments": {
+            "path": "notes.txt"
+          },
+          "dir": "out",
+          "hash": "4657d2774e0bbc686c2319ab20e07481bf7eadf3bb121a4c25be86423e0f3bcc",
+          "message_type": "tools/call",
+          "prev_hash": "907b87ba579e72bee6fce9a6b7c853f7cb4764d27952de29c7b39da0e41e4df2",
+          "seq": 7,
+          "tool": "read_file",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "d5e2ac44fd3e8ccd8fdaef1fcdde1bdd4ed8637f36ce63e7d26a13d08b66ee26",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "4657d2774e0bbc686c2319ab20e07481bf7eadf3bb121a4c25be86423e0f3bcc",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "read_file"
+        },
+        {
+          "dir": "out",
+          "hash": "c92aa2aaed731fa14570ef26c818e7d7dc26f5074e873a15d171bee73e6c951d",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "d5e2ac44fd3e8ccd8fdaef1fcdde1bdd4ed8637f36ce63e7d26a13d08b66ee26",
+          "seq": 9
+        },
+        {
+          "dir": "in",
+          "hash": "be4e0babf5f67c285a355f26a52919c09412e84207c01d65170e8670ca6da6f7",
+          "message_type": "tools/list.result",
+          "prev_hash": "c92aa2aaed731fa14570ef26c818e7d7dc26f5074e873a15d171bee73e6c951d",
+          "result": "{\"tools\": [{\"name\": \"get_time\", \"description\": \"Return the server's current time.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}, \"required\": []}}, {\"name\": \"sync_notes\", \"description\": \"Sync...",
+          "seq": 10,
+          "tool_names": [
+            "get_time",
+            "sync_notes",
+            "read_file"
+          ],
+          "tools": [
+            {
+              "description": "Return the server's current time.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "get_time"
+            },
+            {
+              "description": "Sync local note state back to the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "sync_notes"
+            },
+            {
+              "description": "Read a file from the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              },
+              "name": "read_file"
+            }
+          ],
+          "tools_sha256": "af9b25a79c6c77986e44490402cc0d48c308210f424ee8d2db9e98c83009c391"
+        },
+        {
+          "arguments": {
+            "state": "clean"
+          },
+          "dir": "out",
+          "hash": "6cae86c8990d22dae64f64f9946b73f250ae25bc43a32692c41693dad1b2afde",
+          "message_type": "tools/call",
+          "prev_hash": "be4e0babf5f67c285a355f26a52919c09412e84207c01d65170e8670ca6da6f7",
+          "seq": 11,
+          "tool": "sync_notes",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "dd7bbfd09f5ca8dc7dcc16ad9df8b8f8643b5dbe0dd76378d785ac3041bc311d",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "6cae86c8990d22dae64f64f9946b73f250ae25bc43a32692c41693dad1b2afde",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 12,
+          "tool": "sync_notes"
+        },
+        {
+          "dir": "out",
+          "hash": "9081ae4d746e3438099394e29a512ebdbf40a8d7a41a96cbf863d6044de0c6fa",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "dd7bbfd09f5ca8dc7dcc16ad9df8b8f8643b5dbe0dd76378d785ac3041bc311d",
+          "seq": 13
+        },
+        {
+          "dir": "in",
+          "hash": "64cf365788df869e236adb2cfb29406a0534cb128e26112407addfa8f4aa33a6",
+          "message_type": "tools/list.result",
+          "prev_hash": "9081ae4d746e3438099394e29a512ebdbf40a8d7a41a96cbf863d6044de0c6fa",
+          "result": "{\"tools\": [{\"name\": \"get_time\", \"description\": \"Return the server's current time.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {}, \"required\": []}}, {\"name\": \"sync_notes\", \"description\": \"Sync...",
+          "seq": 14,
+          "tool_names": [
+            "get_time",
+            "sync_notes",
+            "read_file"
+          ],
+          "tools": [
+            {
+              "description": "Return the server's current time.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "get_time"
+            },
+            {
+              "description": "Sync local note state back to the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "state": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "name": "sync_notes"
+            },
+            {
+              "description": "Read a file from the workspace.",
+              "inputSchema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              },
+              "name": "read_file"
+            }
+          ],
+          "tools_sha256": "af9b25a79c6c77986e44490402cc0d48c308210f424ee8d2db9e98c83009c391"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 14,
+      "near_miss_of": "mcp_schema_drift",
+      "neutralized_signal": "tools_sha256 identical across all three listings",
+      "rationale": "Servers legitimately reshuffle tools/list between calls (map iteration, pagination). The digest sorts by tool name before hashing (mcp_client.tools_digest), so order is not in the hash; the harness recomputes the digest independently and proves both listings hash equal AND that the digest is not dead weight (see atck_reorder_then_append).",
+      "trace_file": "HACK/blue/traces/neg_tools_list_reorder.jsonl"
+    },
+    "neg_upload_backup_no_payload": {
+      "entries": [
+        {
+          "dir": "out",
+          "hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "id": 1,
+          "message_type": "initialize",
+          "params": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"mcp-purple-lab\", \"version\": \"0.1.0\"}}",
+          "prev_hash": "",
+          "seq": 1
+        },
+        {
+          "dir": "in",
+          "hash": "639b1a4923e7f73ec1996962cb9394748ecad73bf4755675bad6d4e452d9a6fd",
+          "message_type": "initialize.result",
+          "prev_hash": "cc4bfa8eb4befcfb9c9ef0fef69a1eb0d820c2c68d467dd54ca9cbe42884b347",
+          "result": "{\"protocolVersion\": \"2024-11-05\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"backup-server\", \"version\": \"1.0.0\"}}",
+          "seq": 2
+        },
+        {
+          "dir": "out",
+          "hash": "07c335c1409c6c5977a8b03886242699bf76a50a3546ed326a5945465bc335f1",
+          "message_type": "notification.notifications/initialized",
+          "params": "{}",
+          "prev_hash": "639b1a4923e7f73ec1996962cb9394748ecad73bf4755675bad6d4e452d9a6fd",
+          "seq": 3
+        },
+        {
+          "dir": "out",
+          "hash": "9d080f4a5715c56233402ed56f0138b78f7e641f4ed90b988f74c3fd09fcde1f",
+          "id": 2,
+          "message_type": "tools/list",
+          "params": "{}",
+          "prev_hash": "07c335c1409c6c5977a8b03886242699bf76a50a3546ed326a5945465bc335f1",
+          "seq": 4
+        },
+        {
+          "dir": "in",
+          "hash": "d78a847eef2b76d8b91b67820e756ec8a9d7536c9be5c349aa5ba9b44960c1c5",
+          "message_type": "tools/list.result",
+          "prev_hash": "9d080f4a5715c56233402ed56f0138b78f7e641f4ed90b988f74c3fd09fcde1f",
+          "result": "{\"tools\": [{\"name\": \"upload_backup\", \"description\": \"Upload a workspace backup bundle to the backup service.\", \"inputSchema\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\"}, \"backup_id...",
+          "seq": 5,
+          "tool_names": [
+            "upload_backup",
+            "list_backups"
+          ],
+          "tools": [
+            {
+              "description": "Upload a workspace backup bundle to the backup service.",
+              "inputSchema": {
+                "properties": {
+                  "backup_id": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url",
+                  "backup_id"
+                ],
+                "type": "object"
+              },
+              "name": "upload_backup"
+            },
+            {
+              "description": "List recent backups.",
+              "inputSchema": {
+                "properties": {},
+                "required": [],
+                "type": "object"
+              },
+              "name": "list_backups"
+            }
+          ],
+          "tools_sha256": "628cb304335877b6ceb2c333398790ceb26caa65c92706419a3234273ef2d6f8"
+        },
+        {
+          "dir": "lab",
+          "hash": "4a483a5ea6eceea187148906eb9eec047635989d3d15e4ab362ed8d4cc71409e",
+          "message_type": "server_started",
+          "prev_hash": "d78a847eef2b76d8b91b67820e756ec8a9d7536c9be5c349aa5ba9b44960c1c5",
+          "seq": 6,
+          "server": "HACK/blue corpus (synthetic; mirrors backup-server)",
+          "tools": [
+            "upload_backup",
+            "list_backups"
+          ]
+        },
+        {
+          "arguments": {},
+          "dir": "out",
+          "hash": "92dd16baafb9a9851c98992bb5a1dc5589b6eacf70e67971f3dede281b3f2faa",
+          "message_type": "tools/call",
+          "prev_hash": "4a483a5ea6eceea187148906eb9eec047635989d3d15e4ab362ed8d4cc71409e",
+          "seq": 7,
+          "tool": "list_backups",
+          "ts": 1794184600001
+        },
+        {
+          "dir": "in",
+          "hash": "25ad5db47a11cec09c117f464648b4f8db18eb44de1cfa8b3632029d48a24252",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "92dd16baafb9a9851c98992bb5a1dc5589b6eacf70e67971f3dede281b3f2faa",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 8,
+          "tool": "list_backups"
+        },
+        {
+          "arguments": {
+            "backup_id": "b-42",
+            "url": "https://app.example/upload"
+          },
+          "dir": "out",
+          "hash": "20ffc4d56f6c3f30de2ce1236aa2b05750c62c77805f58d28ce633015a06a5d8",
+          "message_type": "tools/call",
+          "prev_hash": "25ad5db47a11cec09c117f464648b4f8db18eb44de1cfa8b3632029d48a24252",
+          "seq": 9,
+          "tool": "upload_backup",
+          "ts": 1794184600002
+        },
+        {
+          "dir": "in",
+          "hash": "5e3ea6fc9c8c206c0fdc18f914e908c1e7e56c195087575f450d5f92350e676b",
+          "isError": false,
+          "message_type": "tools/call.result",
+          "prev_hash": "20ffc4d56f6c3f30de2ce1236aa2b05750c62c77805f58d28ce633015a06a5d8",
+          "result_excerpt": "{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}], \"isError\": false}",
+          "seq": 10,
+          "tool": "upload_backup"
+        }
+      ],
+      "fired_by_current_rules": [],
+      "line_count": 10,
+      "near_miss_of": "mcp_tool_poisoning",
+      "neutralized_signal": "no payload key (data/payload/body/content/destination) in arguments",
+      "rationale": "Metadata-only upload handshake (register a backup slot).",
+      "trace_file": "HACK/blue/traces/neg_upload_backup_no_payload.jsonl"
+    }
+  }
+}

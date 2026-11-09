@@ -1,0 +1,22 @@
+# PROPOSED new rule -- the ONLY rule that catches the result-provenance
+# evasion (destination arrives in a tools/call.result, exfil tool renamed to
+# a neutral verb). Requires the engine primitive specified in
+# HACK/blue/RESULT_PROVENANCE_SPEC.md (result_sourced_arguments) and the
+# client recording full `result` on tools/call.result. NOT loadable by the
+# current engine -- run_proof.py executes it through a labeled in-process
+# shim so this is executable evidence, not prose.
+id: mcp_result_sourced_destination
+title: Call destination first seen in a server tool result, not user input
+severity: high
+confidence: medium
+atlas_technique: T1041
+match:
+  message_type: tools/call
+  arguments_contains_url: true
+  # Cross-line key (proposed): fire when the `url` argument's value appeared
+  # in an EARLIER tools/call.result body. A user-named destination is typed
+  # into the agent before any call; a server-injected one is read out of a
+  # result first. Correlation, not a name blacklist: neutral names like
+  # `archive_workspace` / `store_snapshot` cannot be blacklisted without
+  # firing on every backup product.
+  result_sourced_arguments: ["url", "destination", "endpoint", "webhook"]

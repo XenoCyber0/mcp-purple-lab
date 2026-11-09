@@ -1,0 +1,27 @@
+# PROPOSED rule (HACK/blue -- not applied; engine/rules dir is not Blue's to edit).
+# Change vs lab/rules/mcp_oauth_confused_deputy.yaml:
+#   arguments_value_not_in (EXACT string membership, no port/query tolerance)
+#   -> arguments_value_not_matching (NEW key: per-arg regex ALLOWLIST, fires
+#      when the value matches NONE of them).
+# Why: arguments_value_not_in compares full strings, so the RFC 8252 loopback
+# shape http://localhost:8000/oauth/callback?code=ok -- the standard native-app
+# redirect -- is not in the allowlist and FIRES (finding F1, proven by
+# traces/neg_oauth_allowlisted_localhost.jsonl). Exact-match allowlists decay
+# the moment a query string or ephemeral port shows up; a structural allowlist
+# says "loopback callback path" once, forever.
+# Detection preserved: any host that is not app.example / loopback still fires
+# (attacker.example redirect in traces/atck_oauth_bad_redirect.jsonl).
+id: mcp_oauth_confused_deputy
+title: Tool call requests a non-allowlisted OAuth redirect_uri
+severity: high
+confidence: high
+atlas_technique: T1550
+match:
+  message_type: tools/call
+  arguments_keys: ["redirect_uri"]
+  arguments_value_not_matching:
+    redirect_uri:
+      # product callback
+      - "https://app\\.example/oauth/callback(\\?.*)?"
+      # RFC 8252 loopback: localhost or 127.0.0.1, optional port, fixed path
+      - "https?://(localhost|127\\.0\\.0\\.1)(:[0-9]{1,5})?/oauth/callback(\\?.*)?"

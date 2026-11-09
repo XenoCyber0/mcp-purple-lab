@@ -163,7 +163,8 @@ def main() -> int:
             tag = "DETECTED" if okp else "MISSED (regression!)"
         if not okp:
             fail += 1
-        print(f"  {name:38s} fired={fired or '[]':48s} {tag}")
+        fired_s = ", ".join(fired) if fired else "[]"
+        print(f"  {name:38s} fired={fired_s:48s} {tag}")
 
     print("\n== Section 2: PROPOSED ruleset (shim) ==")
     matching.KNOWN_KEYS.update({"arguments_any_key",

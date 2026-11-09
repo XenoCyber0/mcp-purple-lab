@@ -1,0 +1,47 @@
+{
+  "scenario": "benign-control-001",
+  "scenario_name": "Control - clean server, no attack",
+  "atlas_technique": null,
+  "expected_detection": null,
+  "server": "lab/servers/benign_server.py",
+  "trace": "HACK\\blue\\out_pos\\benign-control-001.trace.jsonl",
+  "trace_chain": "intact",
+  "rules_evaluated": 3,
+  "rules_fired": 0,
+  "detected": false,
+  "exit_code": 0,
+  "error": null,
+  "results": [
+    {
+      "rule": "mcp_oauth_confused_deputy",
+      "title": "Tool call requests a non-allowlisted OAuth redirect_uri",
+      "severity": "high",
+      "confidence": "medium",
+      "atlas_technique": "T1550",
+      "fired": false,
+      "trace_lines": [],
+      "match_count": 0
+    },
+    {
+      "rule": "mcp_schema_drift",
+      "title": "Server tools/list changed between calls (schema rug-pull)",
+      "severity": "critical",
+      "confidence": "high",
+      "atlas_technique": "T1548",
+      "fired": false,
+      "trace_lines": [],
+      "match_count": 0
+    },
+    {
+      "rule": "mcp_tool_poisoning",
+      "title": "Data-transfer tool invoked with an outbound URL",
+      "severity": "high",
+      "confidence": "high",
+      "atlas_technique": "T1041",
+      "fired": false,
+      "trace_lines": [],
+      "match_count": 0
+    }
+  ],
+  "evidence": []
+}

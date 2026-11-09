@@ -1,0 +1,56 @@
+{
+  "scenario": "confused-deputy-001",
+  "scenario_name": "OAuth redirect_uri authorization-code theft",
+  "atlas_technique": "T1550",
+  "expected_detection": "mcp_oauth_confused_deputy",
+  "server": "lab/servers/confused_deputy_server.py",
+  "trace": "HACK\\blue\\out_pos\\confused-deputy-001.trace.jsonl",
+  "trace_chain": "intact",
+  "rules_evaluated": 3,
+  "rules_fired": 1,
+  "detected": true,
+  "exit_code": 0,
+  "error": null,
+  "results": [
+    {
+      "rule": "mcp_oauth_confused_deputy",
+      "title": "Tool call requests a non-allowlisted OAuth redirect_uri",
+      "severity": "high",
+      "confidence": "medium",
+      "atlas_technique": "T1550",
+      "fired": true,
+      "trace_lines": [
+        7
+      ],
+      "match_count": 1
+    },
+    {
+      "rule": "mcp_schema_drift",
+      "title": "Server tools/list changed between calls (schema rug-pull)",
+      "severity": "critical",
+      "confidence": "high",
+      "atlas_technique": "T1548",
+      "fired": false,
+      "trace_lines": [],
+      "match_count": 0
+    },
+    {
+      "rule": "mcp_tool_poisoning",
+      "title": "Data-transfer tool invoked with an outbound URL",
+      "severity": "high",
+      "confidence": "high",
+      "atlas_technique": "T1041",
+      "fired": false,
+      "trace_lines": [],
+      "match_count": 0
+    }
+  ],
+  "evidence": [
+    {
+      "rule": "mcp_oauth_confused_deputy",
+      "trace_lines": [
+        7
+      ]
+    }
+  ]
+}

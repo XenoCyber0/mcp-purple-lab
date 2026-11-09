@@ -1,0 +1,45 @@
+# PROPOSED rule (HACK/blue -- simulated proposal, NOT the live rule).
+# Two changes vs lab/rules/mcp_tool_poisoning.yaml:
+#
+# 1. RECALL fix (finding F2): the ambiguous-verb branch uses
+#    `arguments_keys: [data, payload, body, content, destination]`, but
+#    arguments_keys is an AND of ALL listed keys (matching.py line 77:
+#    `all(k in args for k in cond)`). A real exfil `send_backup_snapshot
+#    {url, data}` -- exactly HACK/red/scratch/lab/servers/evil_server_v2.py --
+#    carries ONE payload key and FAILS the five-way AND. The rule comment says
+#    "carry a payload argument" (ANY). New key `arguments_any_key` is the
+#    ANY-of variant the comment always intended.
+#    Proven: traces/atck_result_sourced_exfil_v2_named.jsonl fires NOTHING
+#    under the current rule.
+#
+# 2. PRECISION fix (finding F1b): the recall fix alone would fire on the
+#    legitimate `upload_backup {url: https://app.example/upload, payload}`
+#    call (traces/neg_case6_upload_backup_full.jsonl). The remaining signal is
+#    DESTINATION REPUTATION, which no name-based rule can see. New key
+#    `arguments_value_not_matching`: negated allowlist -- fire only when the
+#    url value matches NONE of the tenant's legitimate endpoint patterns.
+#    Patterns are lab placeholders for a per-deployment config value; in
+#    production they come from the integration manifest, not the rule file.
+#    Over-tightening guard: an attacker who posts to app.example is outside
+#    this rule's model by construction (destination-allowlist rules can never
+#    see allowlisted-destination exfil) -- that residual is covered by
+#    mcp_result_sourced_destination, not by stretching this rule.
+id: mcp_tool_poisoning
+title: Data-transfer tool invoked with an outbound non-allowlisted URL
+severity: high
+confidence: high
+atlas_technique: T1041
+match:
+  message_type: tools/call
+  arguments_contains_url: true
+  # NEW: destination must not be a configured legitimate endpoint.
+  arguments_value_not_matching:
+    url:
+      - "https://app\\.example/.*"
+      - "http://localhost(:[0-9]{1,5})?/.*"
+  OR:
+    # Unambiguous transfer names: no payload-key requirement needed.
+    - tool_name_contains: ["canary", "exfil", "dump", "export_"]
+    # Ambiguous verbs + ANY one payload key (was: AND of all five).
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_any_key: ["data", "payload", "body", "content", "destination"]
