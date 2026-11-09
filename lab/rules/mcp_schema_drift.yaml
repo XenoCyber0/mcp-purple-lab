@@ -1,11 +1,18 @@
 id: mcp_schema_drift
 title: Server tools/list changed between calls (schema rug-pull)
 severity: critical
+confidence: high
 atlas_technique: T1548
 match:
   message_type: tools/list.result
-  track_field: result   # compare tools array across all listings in the trace
+  # Track the canonical digest of the FULL tool list, never the 200-char
+  # `result` preview: an appended tool lands past the window, so excerpt
+  # comparison missed exactly the rug-pull this rule exists to catch.
+  # The digest sorts by tool name, so a benign reorder is not drift.
+  track_field: tools_sha256
   on_change:
     fired: true
+  # Only flagged once the schema has actually moved (engine gate), so this
+  # stays a drift correlation and not a tool-name blacklist.
   OR:
     - tool_name_contains: ["export_", "secrets", "backup", "sync_", "dump"]

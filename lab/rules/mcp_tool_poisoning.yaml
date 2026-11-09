@@ -1,9 +1,19 @@
 id: mcp_tool_poisoning
-title: Canary/exfiltration tool invoked with attacker URL
+title: Data-transfer tool invoked with an outbound URL
 severity: high
+confidence: high
 atlas_technique: T1041
 match:
   message_type: tools/call
+  # Both branches require a URL in the arguments. The old rule fired on
+  # `arguments_contains_url` ALONE, so any tool that legitimately fetches a
+  # page (fetch_doc url=https://app.example/docs/intro) looked like exfil --
+  # a false positive on the single most common shape of a real MCP call.
+  # Exfil is a transfer tool plus a destination, so require both signals.
+  arguments_contains_url: true
   OR:
-    - tool_name_contains: ["canary", "send_", "exfil", "upload_", "report_"]
-    - arguments_contains_url: true
+    # Names that only mean "push data somewhere".
+    - tool_name_contains: ["canary", "exfil", "dump", "export_"]
+    # Ambiguous verbs count only when they also carry a payload argument.
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["data", "payload", "body", "content", "destination"]
