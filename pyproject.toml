@@ -1,0 +1,17 @@
+[project]
+name = "mcp-purple-lab"
+version = "0.1.0"
+description = "Close the purple-team loop for MCP: emulate an attack, capture telemetry, evaluate detection rules, prove from trace evidence."
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+# Not a distributable package: there is no build-system on purpose. Install the
+# single dependency (`pip install pyyaml`) and run the lab from the repo root.
+# Everything under lab/ is stdlib-only apart from PyYAML, and the lab performs
+# no network I/O at runtime.
+
+[project.optional-dependencies]
+dev = []

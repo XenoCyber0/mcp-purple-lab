@@ -1,0 +1,64 @@
+name: lab
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  purple-loop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the only dependency
+        run: python -m pip install --upgrade pip "PyYAML>=6.0"
+
+      # Order matters: `out/` is gitignored, so the trace files that
+      # TestRuleEngine::test_evidence_lines_exist walks do not exist on a fresh
+      # clone. summary.py regenerates them (and asserts the coverage invariants
+      # with its own exit code). Running unittest first would make that test
+      # pass vacuously.
+      - name: Coverage matrix (3 attacks detected, control clean)
+        run: python lab/summary.py
+
+      - name: Test suite
+        run: python -m unittest discover -s tests -v
+
+      - name: File-size contract (lab/*.py stays under ~200 lines)
+        shell: python
+        run: |
+          import pathlib, sys
+          bad = [(p, len(p.read_text(encoding="utf-8").splitlines()))
+                 for p in sorted(pathlib.Path("lab").rglob("*.py"))]
+          for p, n in bad:
+              print(f"{n:5d}  {p}")
+          over = [(p, n) for p, n in bad if n > 220]
+          if over:
+              print("OVER BUDGET (split the file):", over)
+              sys.exit(1)
+
+      - name: Canary hygiene (reserved domains only)
+        shell: python
+        run: |
+          import pathlib, re, sys
+          ALLOW = re.compile(r"^https?://([a-z0-9-]+\.)*(example|invalid)([:/]|$)", re.I)
+          urls = set()
+          for p in list(pathlib.Path("lab").rglob("*")) + list(pathlib.Path("tests").rglob("*")):
+              if p.is_file() and p.suffix in {".py", ".yaml", ".yml", ".json", ".md"}:
+                  urls.update(re.findall(r"https?://[^\"'\s<>)]+", p.read_text(encoding="utf-8")))
+          bad = sorted(u for u in urls if not ALLOW.match(u))
+          print(f"checked {len(urls)} url(s) in lab/ and tests/")
+          for u in bad:
+              print("VIOLATION:", u)
+          sys.exit(1 if bad else 0)
