@@ -109,3 +109,27 @@ merge — never merge-and-pray.
 Deferred for v0.2 (documented in README Limitations, not silently skipped):
 real-LLM driver (no-network constraint; opt-in only), SIEM/Sigma export,
 full harness API, source-of-argument provenance RULE, cross-server deputy.
+
+## Draft landed: notification-aware client (supports D3/D9)
+
+HACK/aggregator/scratch/clientv2/ holds a tested draft (no lab/ edits yet —
+Blue and Red are measuring current rules, and a mid-run client change would
+stale their evidence):
+
+- rpc_stdio.py — id-routed read loop; id-less messages are notifications,
+  recorded and never consumed as responses; mismatched-id response raises.
+- mcp_client_v2.py — re-lists on notifications/tools/list_changed (deferred
+  so callbacks never re-enter the read loop; re-list line carries reason=);
+  tools/call.result now records the FULL result as `result` (D4 evidence).
+- Proof (mcp_client_v2_proof.py) against Red's listchanged_server.py:
+  chain intact 16 lines; notification recorded at line 9; digest moves
+  6969d4e->f1c7d3f (listings at lines 5,12); EXISTING rules fire with no rule
+  changes: mcp_schema_drift critical lines [12,16], mcp_tool_poisoning
+  high line [15]. -W error::ResourceWarning clean.
+- Control (old_client_control.py): the same server through the CURRENT client
+  eats the notification (ping's response = None, notification NOWHERE in the
+  trace, single tools/list) — the mis-parse is proven, not asserted.
+
+D3 gate: satisfied on the client side. Merge of rugpull_notify still awaits
+Red's live adjudication (their run must reproduce the miss with the old
+client); applying to lab/ is the harness batch's job.
