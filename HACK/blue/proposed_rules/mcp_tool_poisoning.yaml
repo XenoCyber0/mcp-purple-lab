@@ -5,7 +5,7 @@
 #    `arguments_keys: [data, payload, body, content, destination]`, but
 #    arguments_keys is an AND of ALL listed keys (matching.py line 77:
 #    `all(k in args for k in cond)`). A real exfil `send_backup_snapshot
-#    {url, data}` -- exactly HACK/red/scratch/lab/servers/evil_server_v2.py --
+#    {url, data}` -- exactly HACK/attack_scenarios/scratch/lab/servers/evil_server_v2.py --
 #    carries ONE payload key and FAILS the five-way AND. The rule comment says
 #    "carry a payload argument" (ANY). New key `arguments_any_key` is the
 #    ANY-of variant the comment always intended.

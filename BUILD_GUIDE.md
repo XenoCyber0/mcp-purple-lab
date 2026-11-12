@@ -1,7 +1,7 @@
 # BUILD GUIDE — mcp-purple-lab (Mixture-of-Agents purple-team hub for MCP)
 
 Hand this file to 4 agents. 3 are **reference (proposer) agents**, 1 is the **aggregator**.
-Work happens in `C:\Users\PC\Desktop\PC2.0\mcp-purple-lab`.
+Work happens in `.`.
 
 ---
 

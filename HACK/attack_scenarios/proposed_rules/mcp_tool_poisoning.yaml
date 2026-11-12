@@ -1,0 +1,34 @@
+id: mcp_tool_poisoning
+title: Data-transfer tool invoked with an outbound URL
+severity: high
+confidence: high
+atlas_technique: T1041
+# RED PROPOSAL (rule-only fix, NO engine change).
+# The merged rule's second OR-block declares
+#   arguments_keys: [data, payload, body, content, destination]
+# but arguments_keys means ALL keys present (matching.py::cond_matches), so
+# the block demands a call carrying data AND payload AND body AND content AND
+# destination simultaneously -- no real exfil call does. Proven evasion:
+# HACK/attack_scenarios/scenarios/tool_poisoning_v2.yaml (send_backup_snapshot with
+# {url, data}) fires 0/3 rules. The intent -- "an ambiguous transfer verb
+# PAIRED WITH A payload key" -- is ANY, so express OR as separate blocks.
+# Same rule id, same title, same precision intent; verified against every
+# trace in out/ and HACK/attack_scenarios/out by HACK/attack_scenarios/scratch/verify_proposed_rules.py.
+match:
+  message_type: tools/call
+  arguments_contains_url: true
+  OR:
+    # Names that only mean "push data somewhere".
+    - tool_name_contains: ["canary", "exfil", "dump", "export_"]
+    # Ambiguous verbs, ONE payload key each: an OR-list expressed the only
+    # way the current engine can say "any of" without a new match key.
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["data"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["payload"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["body"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["content"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["destination"]

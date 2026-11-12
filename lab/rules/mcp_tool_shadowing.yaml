@@ -1,0 +1,24 @@
+id: mcp_tool_shadowing
+title: tools/list shadowing - call resolves to a tool whose name extends a listed sibling
+severity: high
+confidence: medium
+atlas_technique: T1566
+# A shadow tool name is a STRICT extension of a popular advertised name
+# (fetch -> fetch_all), so prefix matching, fuzzy completion or quick
+# approval on a truncated UI line resolves the popular call to the wrong
+# entry. Prefix ambiguity is a relation between two tools/list entries, so
+# it needs the cross-line tool_name_shadow engine key -- no single-line key
+# can express it. Precision comes from the siblings, not the name: the call
+# must also carry an outbound URL AND a payload key, so a benign prefix
+# pair (fetch_page url=https://app.example/...) never fires -- see the
+# shadow_benign control scenario.
+match:
+  message_type: tools/call
+  tool_name_shadow: true
+  arguments_contains_url: true
+  OR:
+    - arguments_keys: ["data"]
+    - arguments_keys: ["payload"]
+    - arguments_keys: ["body"]
+    - arguments_keys: ["content"]
+    - arguments_keys: ["destination"]

@@ -22,7 +22,7 @@ SINGLE_KEYS = {
     "arguments_keys", "arguments_value_not_in", "arguments_contains_url",
     "arguments_regex", "tool_name_regex",
 }
-TRACE_KEYS = {"track_field", "on_change"}
+TRACE_KEYS = {"track_field", "on_change", "tool_name_shadow"}
 KNOWN_KEYS = SINGLE_KEYS | TRACE_KEYS | {"OR"}
 
 # Keys whose value is an allowlist of argument names checked for membership.
@@ -96,7 +96,7 @@ def cond_matches(entry: dict, key: str, cond: Any) -> bool:
 
 def block_matches(entry: dict, spec: dict) -> bool:
     for key, cond in spec.items():
-        if key == "OR":
+        if key == "OR" or key in TRACE_KEYS:
             continue
         if not cond_matches(entry, key, cond):
             return False

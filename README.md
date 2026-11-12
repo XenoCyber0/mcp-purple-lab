@@ -96,3 +96,7 @@ canary domains are `*.example`.
 ## License
 
 MIT
+
+## Intended use
+
+**Defensive security research only.** The attack scenarios under `HACK/attack_scenarios/` are detection test vectors (proof that the rules fire), not exploits, and the rule engine is a regression suite, not a production detection system. Review rule scope and false-positive risk before adapting any of this to a real MCP deployment.

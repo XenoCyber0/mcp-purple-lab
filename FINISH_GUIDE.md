@@ -5,7 +5,7 @@ Hand this file to 4 agents. 3 are the **same reference agents** as HERMES_GUIDE
 reassigned for this round; the three reference lenses and their ownership stay
 exactly as in HERMES_GUIDE §2.
 
-Work happens in `C:\Users\PC\Desktop\PC2.0\mcp-purple-lab`.
+Work happens in `.`.
 Predecessors: `BUILD_GUIDE.md` (built the MVP) -> `HERMES_GUIDE.md` (hardened it).
 
 ---
@@ -42,7 +42,7 @@ CI additionally enforces two contracts no one may weaken: file size
 
 ### 1a. Unmerged Red proposals — adjudicate, don't rebuild
 
-`HACK/red/scratch/lab/` holds proposals the last aggregator never merged. They
+`HACK/attack_scenarios/scratch/lab/` holds proposals the last aggregator never merged. They
 target the lab from the AFTER-hermes state, so re-verify before applying:
 
 | proposal | what it proves |
@@ -95,7 +95,7 @@ reuse them as the negative-detection corpus (see 1c).
 Reference agents keep HERMES_GUIDE §2 lenses, ownership, and report format.
 This round their job is PROPOSE, one batch, against the current tree:
 
-- **Red** — merge-readiness pass over `HACK/red/scratch`: rebase the 3 proposals
+- **Red** — merge-readiness pass over `HACK/attack_scenarios/scratch`: rebase the 3 proposals
   onto current `evaluate.py`/`matching.py`, add ONE new attack from §1b
   (cross-server confused deputy is the strongest), with scenario + server +
   expected rule. Flag any current rule the new attacks evade.
@@ -125,7 +125,7 @@ This round their job is PROPOSE, one batch, against the current tree:
 
 ## 3. Definition of done
 
-- [ ] All 3 `HACK/red/scratch` proposals merged or rejected-with-rationale in
+- [ ] All 3 `HACK/attack_scenarios/scratch` proposals merged or rejected-with-rationale in
       `HACK/decisions.md` (no third possibility)
 - [ ] At least 2 new attack scenarios (one from §1b list), each with
       positive+negative test in the same commit

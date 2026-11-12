@@ -1,0 +1,10 @@
+id: tool-shadowing-benign-001
+atlas_technique: null
+name: "Control - fetch + fetch_page: same prefix-shadow name pair, benign call shape (single internal URL, no payload body). Zero rules may fire."
+server: HACK/attack_scenarios/servers/shadow_benign_server.py
+agent_script:
+  - tool: fetch
+    arguments: {url: "https://app.example/docs/intro"}
+  - tool: fetch_page
+    arguments: {url: "https://app.example/workspace/page-1"}
+# No expected_detection: run.py exits 0 only if NO rule fires.

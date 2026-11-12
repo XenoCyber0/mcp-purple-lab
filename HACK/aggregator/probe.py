@@ -16,8 +16,8 @@ import json
 import os
 import sys
 
-LAB = r"C:/Users/PC/Desktop/PC2.0/mcp-purple-lab/lab"
-SCRATCH = r"C:/Users/PC/Desktop/PC2.0/mcp-purple-lab/HACK/aggregator/scratch"
+LAB = r"./lab"
+SCRATCH = r"./HACK/aggregator/scratch"
 os.makedirs(SCRATCH, exist_ok=True)
 sys.path.insert(0, LAB)
 

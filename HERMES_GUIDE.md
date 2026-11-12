@@ -1,6 +1,6 @@
 # HERMES HANDOFF — 4 agents (3 reference, 1 aggregator)
 
-Project: **mcp-purple-lab** at `C:\Users\PC\Desktop\PC2.0\mcp-purple-lab`
+Project: **mcp-purple-lab** at `.`
 Goal: **find, fix, and improve** an already-working MVP. It runs green today —
 your job is to make it hold up to real reviewers.
 

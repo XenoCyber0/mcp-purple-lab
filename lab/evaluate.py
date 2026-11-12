@@ -28,6 +28,11 @@ track_field         cross-line: remember this field on every tools/list.result
                     preview made append-only schema drift invisible.
 on_change.fired     whether a change fires the rule (default true; false makes
                     the rule a pure call-flagger)
+tool_name_shadow    cross-line: true on a tools/call line whose tool name
+                    STRICTLY extends another tool advertised on a
+                    tools/list.result line (fetch -> fetch_all). Prefix
+                    ambiguity is a relation between two list entries, so no
+                    single-line key can express it.
 
 OR
 --
@@ -36,6 +41,12 @@ always apply (AND); at least one OR block must additionally match. OR groups
 sub-conditions, it does not replace its siblings: a rule declaring
 `message_type: tools/call` with an OR list never fires on a tools/list line.
 (The engine used to return early on OR and silently discard every sibling key.)
+
+Cross-line keys: `tool_name_shadow: true` restricts matching to tools/call
+lines whose tool name strictly extends another tool advertised on a
+tools/list.result line in the same trace (fetch_all shadows fetch). The
+relation spans two lines, so Rule.evaluate applies it and line_matches skips
+it; sibling keys still AND on the call line.
 
 Unknown match keys raise RuleError at load time. A typo'd key used to mean
 "never matches" -- a permanent false negative with no signal anywhere.
@@ -85,7 +96,46 @@ class Rule:
         """Return the 1-based line numbers this rule fired on."""
         if "track_field" in self.match:
             return self._evaluate_change_tracker(trace)
-        return [i for i, entry in enumerate(trace, 1) if self.line_matches(entry)]
+        baseline = None
+        if "tool_name_shadow" in self.match:
+            baseline = self._baseline_tool_names(trace)
+        hits: list[int] = []
+        for i, entry in enumerate(trace, 1):
+            if baseline is not None and not self._shadows(entry, baseline):
+                continue
+            if self.line_matches(entry):
+                hits.append(i)
+        return hits
+
+    @staticmethod
+    def _baseline_tool_names(trace: list[dict]) -> set[str]:
+        """Every tool name advertised on any tools/list.result line."""
+        names: set[str] = set()
+        for entry in trace:
+            if entry.get("message_type") != "tools/list.result":
+                continue
+            listed = entry.get("tool_names")
+            if isinstance(listed, list):
+                names.update(str(n) for n in listed)
+                continue
+            tools = entry.get("tools")
+            if isinstance(tools, list):
+                names.update(
+                    str(t["name"]) for t in tools
+                    if isinstance(t, dict) and t.get("name")
+                )
+        return names
+
+    def _shadows(self, entry: dict, baseline: set[str]) -> bool:
+        """True when the called tool STRICTLY extends another advertised name.
+
+        fetch_all shadows fetch; fetch itself shadows nothing. A prefix pair
+        alone is not an attack -- the rule's sibling keys must also match.
+        """
+        if not self.match.get("tool_name_shadow"):
+            return False
+        tool = entry.get("tool") or ""
+        return any(other != tool and tool.startswith(other) for other in baseline)
 
     def _evaluate_change_tracker(self, trace: list[dict]) -> list[int]:
         field = self.match["track_field"]

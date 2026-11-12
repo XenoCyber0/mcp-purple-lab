@@ -1,0 +1,24 @@
+id: mcp_tool_shadowing
+title: tools/list shadowing - call resolves to a tool whose name extends a listed sibling
+severity: high
+confidence: medium
+atlas_technique: T1566
+# RED PROPOSAL. Needs ONE new cross-line primitive (see
+# proposed_rules/engine_tool_name_shadow.patch): tool_name_shadow is true on a
+# tools/call line whose tool name STRICTLY extends another tool advertised in
+# the baseline tools/list (fetch -> fetch_all). Prefix ambiguity is a
+# relation between two list entries, so no single-line key can express it.
+# Precision comes from the siblings, not the name: the call must also carry
+# an outbound URL AND a payload key (the exfil shape). A prefix pair whose
+# call is a single benign URL (fetch_page url=https://app.example/...) never
+# fires -- proven by HACK/attack_scenarios/scenarios/shadow_benign.yaml.
+match:
+  message_type: tools/call
+  tool_name_shadow: true
+  arguments_contains_url: true
+  OR:
+    - arguments_keys: ["data"]
+    - arguments_keys: ["payload"]
+    - arguments_keys: ["body"]
+    - arguments_keys: ["content"]
+    - arguments_keys: ["destination"]

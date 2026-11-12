@@ -15,5 +15,17 @@ match:
     # Names that only mean "push data somewhere".
     - tool_name_contains: ["canary", "exfil", "dump", "export_"]
     # Ambiguous verbs count only when they also carry a payload argument.
+    # arguments_keys is ALL-semantics, so "any payload key" must be expressed
+    # as one OR block per key -- a single block listing all five would demand
+    # a call carrying data AND payload AND body AND content AND destination
+    # simultaneously (proven evasion: HACK/attack_scenarios tool_poisoning_v2).
     - tool_name_contains: ["send_", "upload_", "post_"]
-      arguments_keys: ["data", "payload", "body", "content", "destination"]
+      arguments_keys: ["data"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["payload"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["body"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["content"]
+    - tool_name_contains: ["send_", "upload_", "post_"]
+      arguments_keys: ["destination"]
