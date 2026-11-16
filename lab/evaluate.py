@@ -16,6 +16,11 @@ arguments_keys      all of these keys must be present in arguments
 arguments_value_not_in
                     the first URL-ish argument (redirect_uri, url, destination,
                     endpoint, webhook) must NOT be an allowlist entry
+arguments_value_regex_not_in
+                    the same URL-ish argument must NOT match any of these regexes
+                    (re.search, case-insensitive). Host-anchored patterns with a
+                    ([:/?#]|$) boundary express "host is allowlisted" without
+                    enumerating paths -- and without allowing attacker.example.
 arguments_contains_url
                     an http(s) URL appears in the serialized arguments
 arguments_regex     {argument_name: pattern}; re.search must succeed for every

@@ -28,6 +28,7 @@ class StdioRpc:
         self._write = write
         self._readline = readline
         self.on_notification = on_notification
+        self.invalid_requests: list[dict] = []
 
     def send(self, msg: dict) -> int | None:
         self._write(json.dumps(msg) + "\n")
@@ -42,10 +43,22 @@ class StdioRpc:
                 msg = json.loads(line)
             except json.JSONDecodeError as exc:
                 raise RpcError(f"non-JSON line: {line[:200]!r}") from exc
+            if not isinstance(msg, dict):
+                # A JSON scalar/array is a protocol violation, not a
+                # notification: reply with -32600 (Invalid Request) and keep
+                # looping rather than mis-parsing the stream.
+                self.send({"jsonrpc": "2.0", "id": None,
+                           "error": {"code": -32600,
+                                     "message": "Invalid Request: "
+                                                "expected a JSON object"}})
+                continue
             if "id" not in msg:
                 if self.on_notification:
                     self.on_notification(msg)
                 continue
+            if not isinstance(msg, dict) or not isinstance(msg.get("id"), int):
+                raise RpcError(
+                    f"invalid response frame: {msg!r}; JSON-RPC ids are integers")
             if msg["id"] == expect_id:
                 return msg
             raise RpcError(

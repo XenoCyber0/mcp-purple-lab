@@ -5,6 +5,10 @@ atlas_technique: T1550
 match:
   message_type: tools/call
   arguments_keys: ["redirect_uri"]
-  arguments_value_not_in:
-    - "https://app.example/oauth/callback"
-    - "https://localhost/oauth/callback"
+  # Structural allowlist: redirect_uri must NOT be on a known host. Patterns
+  # are host-anchored and end in a ([:/?#]|$) boundary so "app.example"
+  # matches but "attacker.example" does not, and path variants like
+  # /oauth/callback are covered by the boundary class.
+  arguments_value_regex_not_in:
+    - '^https?://([a-z0-9-]+\.)*app\.example([:/?#]|$)'
+    - '^https?://([a-z0-9-]+\.)*localhost([:/?#]|$)'

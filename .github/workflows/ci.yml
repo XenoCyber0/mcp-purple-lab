@@ -52,7 +52,7 @@ jobs:
         shell: python
         run: |
           import pathlib, re, sys
-          ALLOW = re.compile(r"^https?://([a-z0-9-]+\.)*(example|invalid)([:/]|$)", re.I)
+          ALLOW = re.compile(r"^https?://([a-z0-9-]+\.)*(example|invalid)([:/?#]|$)", re.I)
           urls = set()
           for p in list(pathlib.Path("lab").rglob("*")) + list(pathlib.Path("tests").rglob("*")):
               if p.is_file() and p.suffix in {".py", ".yaml", ".yml", ".json", ".md"}:

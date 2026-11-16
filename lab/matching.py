@@ -19,8 +19,8 @@ URL_RE = re.compile(r"https?://", re.IGNORECASE)
 
 SINGLE_KEYS = {
     "message_type", "tool", "tool_name_contains", "arguments_contains",
-    "arguments_keys", "arguments_value_not_in", "arguments_contains_url",
-    "arguments_regex", "tool_name_regex",
+    "arguments_keys", "arguments_value_not_in", "arguments_value_regex_not_in",
+    "arguments_contains_url", "arguments_regex", "tool_name_regex",
 }
 TRACE_KEYS = {"track_field", "on_change", "tool_name_shadow"}
 KNOWN_KEYS = SINGLE_KEYS | TRACE_KEYS | {"OR"}
@@ -91,6 +91,18 @@ def cond_matches(entry: dict, key: str, cond: Any) -> bool:
         if arg_key is None:
             return False
         return args[arg_key] not in cond
+    if key == "arguments_value_regex_not_in":
+        # Structural allowlist: the first URL-ish argument must NOT match any
+        # of these host-anchored patterns. Patterns must end in a
+        # ([:/?#]|$) boundary so "app.example" matches but "attacker.example"
+        # does not; a bare "example" substring would allowlist lookalikes.
+        if not isinstance(args, dict):
+            return False
+        arg_key = next((k for k in _URL_ARG_KEYS if k in args), None)
+        if arg_key is None:
+            return False
+        value = str(args[arg_key])
+        return not any(re.search(p, value, re.IGNORECASE) for p in cond)
     return False  # unreachable: validate_match rejects unknown keys at load
 
 
