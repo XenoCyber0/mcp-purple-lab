@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in the lab is wrong — a rule that misfires, a scenario that breaks, a flaky test.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Paste the command you ran and its full output** — including the
+        `trace.jsonl` excerpt and the reported rule id. Without the trace, a detection bug can't be diagnosed.
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      placeholder: python lab/run.py lab/scenarios/tool_poisoning.yaml
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should the rule have fired on, and what should the cited trace lines be?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: The full stdout/stderr, and the report JSON if you have it.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: Windows 11 / Python 3.11.9 / PyYAML 6.0.2
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I confirmed this is not a stale `out/` directory (`rm -rf out/` and re-run).
+          required: false
+        - label: I ran `python lab/summary.py` and it did not fail too.
+          required: false

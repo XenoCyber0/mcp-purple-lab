@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / rule-format discussion
+    url: https://github.com/XenoCyber0/mcp-purple-lab/discussions
+    about: Ask about the rule schema, scenario format, or the architecture. Use Discussions for open-ended questions.
+  - name: Security policy
+    url: https://github.com/XenoCyber0/mcp-purple-lab/blob/main/SECURITY.md
+    about: Report a bug in the lab (not a vulnerability in a real MCP server) via the issue templates.

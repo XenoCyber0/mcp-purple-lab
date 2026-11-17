@@ -1,0 +1,53 @@
+name: Scenario or rule proposal
+description: Propose a new attack scenario, a new detection rule, or an improvement to an existing one.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New scenarios and rules are the heart of this project. Please include the **trace excerpt**
+        your rule would match on — a rule without a concrete trace is hard to review.
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      placeholder: Add a cross-server confused deputy scenario
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What does this add?
+      description: Which attack behaviour does it cover, and which existing scenario/rule does it not overlap with?
+    validations:
+      required: true
+  - type: textarea
+    id: trace
+    attributes:
+      label: Trace excerpt
+      description: Paste the relevant `trace.jsonl` lines (with line numbers) your rule matches on.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: Proposed rule (YAML)
+      description: If you already drafted it, paste the `lab/rules/*.yaml` body.
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: benign
+    attributes:
+      label: False-positive check
+      description: How does this rule behave against the benign control scenario and the negative cases?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: The scenario uses a fake, local-only server and `*.example` canaries — no network I/O.
+          required: true
