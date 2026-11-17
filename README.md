@@ -1,6 +1,10 @@
 # mcp-purple-lab
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/XenoCyber0/mcp-purple-lab/main/assets/banner.svg" alt="mcp-purple-lab — attack → telemetry → detection → proof" width="900">
+</p>
+
+<p align="center">
   <a href="https://github.com/XenoCyber0/mcp-purple-lab/actions/workflows/ci.yml"><img src="https://github.com/XenoCyber0/mcp-purple-lab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/github/stars/XenoCyber0/mcp-purple-lab?style=flat&color=indigo" alt="Stars">
   <img src="https://img.shields.io/github/forks/XenoCyber0/mcp-purple-lab?style=flat&color=orange" alt="Forks">
@@ -9,13 +13,6 @@
   <img src="https://img.shields.io/badge/detections-3%2F3-00c853" alt="3/3 attacks detected">
 </p>
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║   M C P   P U R P L E   L A B                                    ║
-║  ──────────────────────────────────────────────────────────────  ║
-║  attack  →  telemetry  →  detection  →  proof (line #)           ║
-╚══════════════════════════════════════════════════════════════════╝
-```
 
 > **MCP servers are the new code-execution surface of AI agents — and the rules guarding them are, so far, unproven.**
 > This lab *proves* the rule fired, with the exact trace line as evidence.

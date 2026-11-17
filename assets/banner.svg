@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="0.55" stop-color="#161b27"/>
+      <stop offset="1" stop-color="#1b1030"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c084fc"/>
+      <stop offset="0.5" stop-color="#a371f7"/>
+      <stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a371f7"/>
+      <stop offset="1" stop-color="#f472b6"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="320" rx="18" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="6" rx="3" fill="url(#accent)"/>
+
+  <!-- shield icon -->
+  <g transform="translate(70,70)" fill="none" stroke="url(#accent)" stroke-width="5" stroke-linejoin="round">
+    <path d="M40 0 L80 16 V56 C80 84 62 102 40 112 C18 102 0 84 0 56 V16 Z"/>
+    <path d="M24 56 L36 68 L58 40" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- title -->
+  <text x="190" y="140" font-size="64" font-weight="800" letter-spacing="6" fill="url(#title)" filter="url(#glow)">MCP PURPLE LAB</text>
+
+  <!-- subtitle -->
+  <text x="192" y="196" font-size="26" fill="#e6edf3" font-weight="600">A purple-team range for MCP servers</text>
+
+  <!-- pipeline chips -->
+  <g font-size="22" font-weight="700" font-family="'Consolas', 'Courier New', monospace">
+    <rect x="192" y="224" width="150" height="44" rx="10" fill="#21262d" stroke="#a371f7" stroke-width="2"/>
+    <text x="267" y="253" text-anchor="middle" fill="#c084fc">ATTACK</text>
+    <text x="356" y="253" fill="#f472b6">→</text>
+    <rect x="376" y="224" width="170" height="44" rx="10" fill="#21262d" stroke="#a371f7" stroke-width="2"/>
+    <text x="461" y="253" text-anchor="middle" fill="#c084fc">TRACE</text>
+    <text x="560" y="253" fill="#f472b6">→</text>
+    <rect x="580" y="224" width="190" height="44" rx="10" fill="#21262d" stroke="#a371f7" stroke-width="2"/>
+    <text x="675" y="253" text-anchor="middle" fill="#c084fc">DETECT</text>
+    <text x="784" y="253" fill="#f472b6">→</text>
+    <rect x="804" y="224" width="160" height="44" rx="10" fill="#21262d" stroke="#f472b6" stroke-width="2"/>
+    <text x="884" y="253" text-anchor="middle" fill="#f472b6">PROOF</text>
+  </g>
+
+  <!-- footer tag -->
+  <text x="192" y="300" font-size="16" fill="#8b949e" font-family="'Consolas', 'Courier New', monospace">every verdict cites trace line numbers · no evidence, no detection · exit code = CI gate</text>
+</svg>
