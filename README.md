@@ -14,6 +14,10 @@
 </p>
 
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/XenoCyber0/mcp-purple-lab/main/assets/demo.gif" alt="mcp-purple-lab demo — a poisoned tool is detected from trace evidence" width="760">
+</p>
+
 > **MCP servers are the new code-execution surface of AI agents — and the rules guarding them are, so far, unproven.**
 > This lab *proves* the rule fired, with the exact trace line as evidence.
 
