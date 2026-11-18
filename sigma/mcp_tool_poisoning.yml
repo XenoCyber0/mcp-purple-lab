@@ -1,0 +1,64 @@
+title: Data-transfer tool invoked with an outbound URL
+id: dfe8a023-815a-56fe-88d2-de2093a24ede
+status: experimental
+description: 'Data-transfer tool invoked with an outbound URL
+
+
+  Exported from lab/rules/mcp_tool_poisoning.yaml.'
+references:
+- https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_tool_poisoning.yaml
+author: qiaobochi040726-source
+logsource:
+  product: mcp
+  service: mcp-traffic
+detection:
+  sel_base:
+    message_type: tools/call
+    arguments|re: https?://
+  selection_1:
+    tool|contains:
+    - canary
+    - exfil
+    - dump
+    - export_
+  selection_2:
+    tool|contains:
+    - send_
+    - upload_
+    - post_
+    arguments|contains|all:
+    - '"data"'
+  selection_3:
+    tool|contains:
+    - send_
+    - upload_
+    - post_
+    arguments|contains|all:
+    - '"payload"'
+  selection_4:
+    tool|contains:
+    - send_
+    - upload_
+    - post_
+    arguments|contains|all:
+    - '"body"'
+  selection_5:
+    tool|contains:
+    - send_
+    - upload_
+    - post_
+    arguments|contains|all:
+    - '"content"'
+  selection_6:
+    tool|contains:
+    - send_
+    - upload_
+    - post_
+    arguments|contains|all:
+    - '"destination"'
+  condition: sel_base and 1 of selection_*
+level: high
+tags:
+- attack.t1041
+falsepositives:
+- 'lab confidence: high'

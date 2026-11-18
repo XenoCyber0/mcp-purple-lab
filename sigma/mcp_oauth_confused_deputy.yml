@@ -1,0 +1,28 @@
+title: Tool call requests a non-allowlisted OAuth redirect_uri
+id: 6ed44491-69f0-5b70-9123-8caf7c971cde
+status: experimental
+description: 'Tool call requests a non-allowlisted OAuth redirect_uri
+
+
+  Exported from lab/rules/mcp_oauth_confused_deputy.yaml.'
+references:
+- https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_oauth_confused_deputy.yaml
+author: qiaobochi040726-source
+logsource:
+  product: mcp
+  service: mcp-traffic
+detection:
+  sel_base:
+    message_type: tools/call
+    arguments|contains|all:
+    - '"redirect_uri"'
+  filter:
+    redirect_uri|re:
+    - ^https?://([a-z0-9-]+\.)*app\.example([:/?#]|$)
+    - ^https?://([a-z0-9-]+\.)*localhost([:/?#]|$)
+  condition: sel_base and not filter
+level: high
+tags:
+- attack.t1550
+falsepositives:
+- 'lab confidence: medium'
