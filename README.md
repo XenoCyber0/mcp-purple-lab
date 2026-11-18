@@ -109,6 +109,21 @@ GitHub search on 2026-11-08: **0 repos** for "MCP purple team", "MCP detection v
 - 🎯 `mcp_oauth_confused_deputy` — `redirect_uri` outside a **host-anchored** allowlist (so `app.example.evil.com` can't slip through)
 - 🕳️ `mcp_tool_shadowing` — a second `tools/list` shadows the original definitions
 
+**SIEM export (`sigma/`):**
+
+```bash
+python lab/export_sigma.py            # writes sigma/<rule-id>.yml, one per lab rule
+python lab/export_sigma.py --out /tmp/sigma/   # elsewhere
+```
+
+The round trip is rule -> YAML -> SIEM: `lab/rules/mcp_tool_poisoning.yaml` becomes
+`sigma/mcp_tool_poisoning.yml` with a uuid5 `id` derived from the rule id, so re-exporting
+the same tree is byte-identical and the diff stays readable. Cross-line keys
+(`track_field`, `on_change`, `tool_name_shadow`) can't live in one Sigma rule; the dropped
+key is named in a comment and needs a correlation rule. pySigma is optional — install it
+only if you want to validate the output (`SigmaCollection.from_yaml(...)`); the exporter
+itself is stdlib + PyYAML.
+
 ---
 
 ### ⚡ Quickstart

@@ -1,0 +1,38 @@
+# Dropped: tool_name_shadow -- a single Sigma rule has no stateful
+# correlation between lines. This file carries the single-line half;
+# the original detection needs a correlation rule on top of it.
+title: tools/list shadowing - call resolves to a tool whose name extends a listed sibling
+id: a8defe0b-8a3f-5bb7-96bd-a099c6deb91c
+status: experimental
+description: tools/list shadowing - call resolves to a tool whose name extends a listed sibling (exported from lab/rules/mcp_tool_shadowing.yaml)
+references:
+- https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_tool_shadowing.yaml
+author: qiaobochi040726-source
+logsource:
+  product: mcp
+  service: mcp-traffic
+detection:
+  sel_base:
+    message_type: tools/call
+    arguments|re: https?://
+  selection_1:
+    arguments|contains|all:
+    - '"data"'
+  selection_2:
+    arguments|contains|all:
+    - '"payload"'
+  selection_3:
+    arguments|contains|all:
+    - '"body"'
+  selection_4:
+    arguments|contains|all:
+    - '"content"'
+  selection_5:
+    arguments|contains|all:
+    - '"destination"'
+  condition: sel_base and 1 of selection_*
+level: high
+tags:
+- attack.t1566
+falsepositives:
+- 'lab confidence: medium'
