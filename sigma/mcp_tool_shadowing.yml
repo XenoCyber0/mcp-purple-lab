@@ -1,16 +1,10 @@
-# Dropped cross-line key(s): tool_name_shadow.
-# Sigma cannot express stateful correlation between trace lines in a
-# single rule. This file keeps the single-line half; add a correlation
-# rule to preserve the original detection.
-title: tools/list shadowing - call resolves to a tool whose name extends a listed
-  sibling
+# Dropped: tool_name_shadow -- a single Sigma rule has no stateful
+# correlation between lines. This file carries the single-line half;
+# the original detection needs a correlation rule on top of it.
+title: tools/list shadowing - call resolves to a tool whose name extends a listed sibling
 id: a8defe0b-8a3f-5bb7-96bd-a099c6deb91c
 status: experimental
-description: 'tools/list shadowing - call resolves to a tool whose name extends a
-  listed sibling
-
-
-  Exported from lab/rules/mcp_tool_shadowing.yaml.'
+description: tools/list shadowing - call resolves to a tool whose name extends a listed sibling (exported from lab/rules/mcp_tool_shadowing.yaml)
 references:
 - https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_tool_shadowing.yaml
 author: qiaobochi040726-source

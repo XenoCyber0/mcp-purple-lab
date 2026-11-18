@@ -54,9 +54,6 @@ MATCH_MAP = {
     "arguments_contains": "arguments|contains",
     "arguments_contains_url": "arguments|re",
     "arguments_keys": "arguments|contains|all",
-    "arguments_regex": "arguments.<arg>|re",
-    "arguments_value_regex_not_in": "filter",
-    "arguments_value_not_in": "filter",
 }
 
 
@@ -87,7 +84,7 @@ def _apply(sel: dict, key: str, cond) -> None:
     elif key == "tool_name_regex":
         # The engine demands ALL patterns; Sigma has no "all regex" operator,
         # so each pattern becomes a lookahead inside one |re value.
-        sel[MATCH_MAP[key]] = "".join(f"(?=.*{p})" for p in cond.values())
+        sel[MATCH_MAP[key]] = "".join(f"(?=.*(?:{p}))" for p in cond.values())
     elif key == "arguments_contains_url":
         if cond:
             sel[MATCH_MAP[key]] = "https?://"
@@ -117,12 +114,13 @@ def build_detection(match: dict) -> tuple[dict, list[str]]:
         else:
             _apply(base, key, cond)
 
-    detection: dict = {}
-    if base:
-        detection["sel_base"] = base
-    if args:
-        detection["sel_args"] = args
-    for i, block in enumerate(match.get("OR") or [], 1):
+    # A tracker's OR blocks run against tools/call.result lines, not the list
+    # line this rule keys on -- keep them out or the rule fires on nothing.
+    or_blocks = [] if "track_field" in match else (match.get("OR") or [])
+    if "track_field" in match and match.get("OR"):
+        dropped.append("OR blocks")
+    detection = {n: s for n, s in (("sel_base", base), ("sel_args", args)) if s}
+    for i, block in enumerate(or_blocks, 1):
         sel: dict = {}
         for key, cond in block.items():
             if key in TRACE_KEYS:
@@ -138,7 +136,7 @@ def build_detection(match: dict) -> tuple[dict, list[str]]:
         parts.append("sel_base")
     if args:
         parts.append("sel_args")
-    if match.get("OR"):
+    if or_blocks:
         parts.append("1 of selection_*")
     condition = " and ".join(parts)
     if filter_sel:
@@ -155,7 +153,7 @@ def build_rule(raw: dict, filename: str, author: str) -> tuple[dict, list[str]]:
         "title": raw.get("title", rule_id),
         "id": str(uuid.uuid5(uuid.NAMESPACE_URL, rule_id)),
         "status": "experimental",
-        "description": f"{description}\n\nExported from lab/rules/{filename}.",
+        "description": f"{description} (exported from lab/rules/{filename})",
         "references": [f"{SCHEME}{SOURCE_BASE}/{filename}"],
         "author": author,
         "logsource": {"product": "mcp", "service": "mcp-traffic"},
@@ -172,10 +170,9 @@ def _header(dropped: list[str]) -> str:
     if not dropped:
         return ""
     return (
-        f"# Dropped cross-line key(s): {', '.join(dropped)}.\n"
-        "# Sigma cannot express stateful correlation between trace lines in a\n"
-        "# single rule. This file keeps the single-line half; add a correlation\n"
-        "# rule to preserve the original detection.\n"
+        f"# Dropped: {', '.join(dropped)} -- a single Sigma rule has no stateful\n"
+        "# correlation between lines. This file carries the single-line half;\n"
+        "# the original detection needs a correlation rule on top of it.\n"
     )
 
 
@@ -191,7 +188,8 @@ def export_rules(rules_dir: str, out_dir: str,
             raw = yaml.safe_load(fh)
         doc, dropped = build_rule(raw, name, author)
         body = yaml.safe_dump(
-            doc, sort_keys=False, allow_unicode=True, default_flow_style=False)
+            doc, sort_keys=False, allow_unicode=True, default_flow_style=False,
+            width=1000)  # one long line beats a folded regex no one can diff
         dest = os.path.join(out_dir, f"{raw['id']}.yml")
         with open(dest, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(_header(dropped) + body)
@@ -211,8 +209,8 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = os.path.join(REPO, out_dir)
     written = export_rules(rules_dir, out_dir)
     for path in written:
-        print(f"wrote {os.path.relpath(path, REPO)}")
-    print(f"{len(written)} rule(s) exported to {os.path.relpath(out_dir, REPO)}")
+        print(f"wrote {os.path.basename(path)}")
+    print(f"{len(written)} rule(s) exported to {out_dir}")
     return 0
 
 

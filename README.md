@@ -112,15 +112,17 @@ GitHub search on 2026-11-08: **0 repos** for "MCP purple team", "MCP detection v
 **SIEM export (`sigma/`):**
 
 ```bash
-python lab/export_sigma.py --out sigma/   # explicit output dir
-python lab/export_sigma.py                # same, defaults to sigma/ at repo root
-ls sigma/                                 # one <rule-id>.yml per lab rule
-python -c "import glob,yaml; [yaml.safe_load(open(f)) for f in glob.glob('sigma/*.yml')]"
+python lab/export_sigma.py            # writes sigma/<rule-id>.yml, one per lab rule
+python lab/export_sigma.py --out /tmp/sigma/   # elsewhere
 ```
 
-The exporter is deterministic (UUIDv5 ids) and needs only PyYAML. Cross-line keys
-(`track_field`, `on_change`, `tool_name_shadow`) are called out in a comment and need a
-correlation rule. pySigma is optional and only useful to validate the generated YAML.
+The round trip is rule -> YAML -> SIEM: `lab/rules/mcp_tool_poisoning.yaml` becomes
+`sigma/mcp_tool_poisoning.yml` with a uuid5 `id` derived from the rule id, so re-exporting
+the same tree is byte-identical and the diff stays readable. Cross-line keys
+(`track_field`, `on_change`, `tool_name_shadow`) can't live in one Sigma rule; the dropped
+key is named in a comment and needs a correlation rule. pySigma is optional — install it
+only if you want to validate the output (`SigmaCollection.from_yaml(...)`); the exporter
+itself is stdlib + PyYAML.
 
 ---
 

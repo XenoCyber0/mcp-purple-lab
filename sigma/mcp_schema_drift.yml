@@ -1,14 +1,10 @@
-# Dropped cross-line key(s): track_field, on_change.
-# Sigma cannot express stateful correlation between trace lines in a
-# single rule. This file keeps the single-line half; add a correlation
-# rule to preserve the original detection.
+# Dropped: track_field, on_change, OR blocks -- a single Sigma rule has no stateful
+# correlation between lines. This file carries the single-line half;
+# the original detection needs a correlation rule on top of it.
 title: Server tools/list changed between calls (schema rug-pull)
 id: 91602f6e-494b-5cfb-b6b1-89409dc0739d
 status: experimental
-description: 'Server tools/list changed between calls (schema rug-pull)
-
-
-  Exported from lab/rules/mcp_schema_drift.yaml.'
+description: Server tools/list changed between calls (schema rug-pull) (exported from lab/rules/mcp_schema_drift.yaml)
 references:
 - https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_schema_drift.yaml
 author: qiaobochi040726-source
@@ -18,14 +14,7 @@ logsource:
 detection:
   sel_base:
     message_type: tools/list.result
-  selection_1:
-    tool|contains:
-    - export_
-    - secrets
-    - backup
-    - sync_
-    - dump
-  condition: sel_base and 1 of selection_*
+  condition: sel_base
 level: critical
 tags:
 - attack.t1548

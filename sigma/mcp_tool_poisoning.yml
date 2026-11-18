@@ -1,10 +1,7 @@
 title: Data-transfer tool invoked with an outbound URL
 id: dfe8a023-815a-56fe-88d2-de2093a24ede
 status: experimental
-description: 'Data-transfer tool invoked with an outbound URL
-
-
-  Exported from lab/rules/mcp_tool_poisoning.yaml.'
+description: Data-transfer tool invoked with an outbound URL (exported from lab/rules/mcp_tool_poisoning.yaml)
 references:
 - https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_tool_poisoning.yaml
 author: qiaobochi040726-source
