@@ -1,7 +1,10 @@
 """Unit tests for the severity-weighted coverage score.
 
-Only the pure helpers are exercised here -- no server is spawned.
+The pure helpers are checked directly; the gate at the bottom runs main() with
+its output swallowed, since the exit code is the contract.
 """
+import contextlib
+import io
 import os
 import sys
 import unittest
@@ -58,6 +61,30 @@ class TestParseWeights(unittest.TestCase):
     def test_empty_raises(self):
         with self.assertRaises(ValueError):
             summary.parse_weights("")
+
+
+class TestThresholdGate(unittest.TestCase):
+    """The gate itself -- main() with --threshold, output swallowed."""
+
+    def _run(self, *argv):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = summary.main(list(argv))
+        return code, buf.getvalue()
+
+    def test_threshold_at_full_score_passes(self):
+        code, out = self._run("--threshold", "100")
+        self.assertEqual(code, 0, out)
+        self.assertIn("score: ", out)
+
+    def test_threshold_above_score_fails(self):
+        code, out = self._run("--threshold", "101")
+        self.assertEqual(code, 1, out)
+
+    def test_no_threshold_prints_no_score_line(self):
+        code, out = self._run()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("score: ", out)
 
 
 if __name__ == "__main__":

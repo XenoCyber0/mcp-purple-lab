@@ -19,6 +19,11 @@ Exit codes mirror run.py, with setup failure taking precedence:
 2  any scenario failed to run (server would not start, broken trace chain)
 1  an attack went undetected, or the control raised a rule
 0  everything ran and the coverage invariants hold
+
+`--threshold N` prints a severity-weighted score line and gates on it: exit 1
+when the weighted percentage falls below N. `--severity-weights` overrides the
+weights (low=1 medium=3 high=5 critical=10). Without `--threshold` nothing
+changes -- CI depends on today's exit codes.
 """
 from __future__ import annotations
 
@@ -39,7 +44,6 @@ SCEN_COL_MIN = 22
 PAD = 2
 
 DEFAULT_WEIGHTS = {"low": 1, "medium": 3, "high": 5, "critical": 10}
-WEIGHT_ORDER = ("low", "medium", "high", "critical")
 
 
 def parse_weights(text: str) -> dict[str, float]:
@@ -64,7 +68,7 @@ def parse_weights(text: str) -> dict[str, float]:
             value = float(raw)
         except ValueError:
             raise ValueError(f"weight for {name!r} is not a number: {raw!r}") from None
-        weights[name] = int(value) if value.is_integer() else value
+        weights[name] = value
     if not weights:
         raise ValueError("no severity weights given")
     return weights
@@ -87,16 +91,9 @@ def score(pairs: list[tuple[str, bool]],
     return earned, total, pct
 
 
-def _num(value: float) -> str:
-    if isinstance(value, float):
-        return str(int(value)) if value.is_integer() else f"{value:g}"
-    return str(value)
-
-
 def _weights_text(weights: dict[str, float]) -> str:
-    names = [n for n in WEIGHT_ORDER if n in weights]
-    names += sorted(n for n in weights if n not in WEIGHT_ORDER)
-    return " ".join(f"{n}={_num(weights[n])}" for n in names)
+    ordered = sorted(weights.items(), key=lambda kv: (kv[1], kv[0]))
+    return " ".join(f"{name}={w:g}" for name, w in ordered)
 
 
 def _widths(rows: list[list[str]], headers: list[str],
@@ -191,8 +188,8 @@ def main(argv: list[str] | None = None) -> int:
 
     earned, total, pct = score(pairs, weights)
     if args.threshold is not None:
-        print(f"score: {_num(earned)}/{_num(total)} = {pct:.1f}% "
-              f"({_weights_text(weights)} threshold={_num(args.threshold)})")
+        print(f"score: {earned:g}/{total:g} = {pct:.1f}% "
+              f"({_weights_text(weights)} threshold={args.threshold:g})")
 
     if any(c == 2 for c in codes):
         return 2   # could not evaluate: do not report a detection verdict
