@@ -22,6 +22,7 @@ Exit codes mirror run.py, with setup failure taking precedence:
 """
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 
@@ -37,6 +38,66 @@ MIN_COL = 12
 SCEN_COL_MIN = 22
 PAD = 2
 
+DEFAULT_WEIGHTS = {"low": 1, "medium": 3, "high": 5, "critical": 10}
+WEIGHT_ORDER = ("low", "medium", "high", "critical")
+
+
+def parse_weights(text: str) -> dict[str, float]:
+    """Parse "low=1,medium=3,..." into a weight map.
+
+    Raises ValueError on a missing value or malformed entry instead of
+    quietly falling back to the defaults -- a typo'd weight would otherwise
+    silently change the gate.
+    """
+    weights: dict[str, float] = {}
+    for part in text.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "=" not in part:
+            raise ValueError(f"expected name=number, got {part!r}")
+        name, _, raw = part.partition("=")
+        name, raw = name.strip(), raw.strip()
+        if not name or not raw:
+            raise ValueError(f"expected name=number, got {part!r}")
+        try:
+            value = float(raw)
+        except ValueError:
+            raise ValueError(f"weight for {name!r} is not a number: {raw!r}") from None
+        weights[name] = int(value) if value.is_integer() else value
+    if not weights:
+        raise ValueError("no severity weights given")
+    return weights
+
+
+def score(pairs: list[tuple[str, bool]],
+          weights: dict[str, float]) -> tuple[float, float, float]:
+    """Sum expected-rule weights; return (earned, total, pct).
+
+    Unknown severities fall back to 1 so a new rule label cannot KeyError
+    the gate. With no expected rules at all the percentage is 0.
+    """
+    earned = total = 0
+    for sev, detected in pairs:
+        w = weights.get(sev, 1)
+        total += w
+        if detected:
+            earned += w
+    pct = 100.0 * earned / total if total else 0.0
+    return earned, total, pct
+
+
+def _num(value: float) -> str:
+    if isinstance(value, float):
+        return str(int(value)) if value.is_integer() else f"{value:g}"
+    return str(value)
+
+
+def _weights_text(weights: dict[str, float]) -> str:
+    names = [n for n in WEIGHT_ORDER if n in weights]
+    names += sorted(n for n in weights if n not in WEIGHT_ORDER)
+    return " ".join(f"{n}={_num(weights[n])}" for n in names)
+
 
 def _widths(rows: list[list[str]], headers: list[str],
             labels: list[str]) -> tuple[int, list[int]]:
@@ -46,8 +107,26 @@ def _widths(rows: list[list[str]], headers: list[str],
     return scen_w, col_w
 
 
-def main() -> int:
-    rules = [r.id for r in load_rules(os.path.join(HERE, "rules"))]
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description="Run every scenario and print a coverage matrix.")
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="gate on the severity-weighted score (percentage)")
+    ap.add_argument("--severity-weights", default=None,
+                    help="override weights, e.g. low=1,medium=3,high=5,critical=10")
+    args = ap.parse_args(argv)
+
+    weights = DEFAULT_WEIGHTS
+    if args.severity_weights is not None:
+        try:
+            weights = parse_weights(args.severity_weights)
+        except ValueError as exc:
+            print(f"bad --severity-weights: {exc}")
+            return 2
+
+    rule_objs = load_rules(os.path.join(HERE, "rules"))
+    rules = [r.id for r in rule_objs]
+    sev_by_rule = {r.id: r.severity for r in rule_objs}
     scen_dir = os.path.join(HERE, "scenarios")
     scenarios = sorted(f for f in os.listdir(scen_dir) if f.endswith(".yaml"))
 
@@ -55,6 +134,7 @@ def main() -> int:
     labels: list[str] = []
     codes: list[int] = []
     notes: list[str] = []
+    pairs: list[tuple[str, bool]] = []
 
     for name in scenarios:
         try:
@@ -68,6 +148,11 @@ def main() -> int:
 
         labels.append(report["scenario"])
         codes.append(report["exit_code"])
+        expected = report["expected_detection"]
+        if expected is not None:
+            detected = any(r["rule"] == expected and r["fired"]
+                           for r in report["results"])
+            pairs.append((sev_by_rule.get(expected, "unknown"), detected))
         if report["trace_chain"] != "intact":
             notes.append(f"{report['scenario']}: trace chain broken: {report['trace_chain']}")
         if report["error"]:
@@ -104,8 +189,15 @@ def main() -> int:
         print("NOTE " + n)
     print(f"{len(labels)} scenarios, {len(rules)} rules")
 
+    earned, total, pct = score(pairs, weights)
+    if args.threshold is not None:
+        print(f"score: {_num(earned)}/{_num(total)} = {pct:.1f}% "
+              f"({_weights_text(weights)} threshold={_num(args.threshold)})")
+
     if any(c == 2 for c in codes):
         return 2   # could not evaluate: do not report a detection verdict
+    if args.threshold is not None:
+        return 0 if pct >= args.threshold else 1
     return 1 if any(c == 1 for c in codes) else 0
 
 
