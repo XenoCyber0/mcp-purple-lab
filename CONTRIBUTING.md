@@ -70,7 +70,7 @@ The servers under `lab/servers/` are **fake**. Nothing leaves the machine; canar
 
 ## Style
 
-- Python: 4-space indent, stdlib `typing` annotations on public functions, no `print()` outside `lab/report.py` and `lab/summary.py` (those are the CLI surfaces).
+- Python: 4-space indent, stdlib `typing` annotations on public functions, no `print()` outside `lab/report.py`, `lab/summary.py` and `lab/export_sigma.py` (those are the CLI surfaces).
 - YAML: 2-space indent, comments explaining *why* a matcher is host-anchored.
 - Commit messages: conventional commits (`feat(rules):`, `test(scenarios):`, `docs:`, `fix:`).
 

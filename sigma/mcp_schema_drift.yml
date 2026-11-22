@@ -1,0 +1,22 @@
+# Dropped: track_field, on_change, OR blocks -- a single Sigma rule has no stateful
+# correlation between lines. This file carries the single-line half;
+# the original detection needs a correlation rule on top of it.
+title: Server tools/list changed between calls (schema rug-pull)
+id: 91602f6e-494b-5cfb-b6b1-89409dc0739d
+status: experimental
+description: Server tools/list changed between calls (schema rug-pull) (exported from lab/rules/mcp_schema_drift.yaml)
+references:
+- https://github.com/XenoCyber0/mcp-purple-lab/blob/main/lab/rules/mcp_schema_drift.yaml
+author: qiaobochi040726-source
+logsource:
+  product: mcp
+  service: mcp-traffic
+detection:
+  sel_base:
+    message_type: tools/list.result
+  condition: sel_base
+level: critical
+tags:
+- attack.t1548
+falsepositives:
+- 'lab confidence: high'

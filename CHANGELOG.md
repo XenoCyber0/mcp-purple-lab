@@ -9,6 +9,8 @@ All notable changes to this project are documented here. The format follows
 ### Added
 - Community health files: `CONTRIBUTING.md`, `SECURITY.md`, issue and PR templates.
 - Discussions enabled for rule-format and scenario design threads.
+- `lab/export_sigma.py` — deterministic Sigma export of every `lab/rules/*.yaml` into
+  `sigma/<rule-id>.yml`, with UUIDv5 ids and correlation-key warnings.
 
 ## [0.1.0] — 2026-11-16
 
