@@ -28,7 +28,8 @@ from trace import Trace, excerpt  # noqa: E402
 from rpc_stdio import RpcError, StdioRpc  # noqa: E402
 from mcp_proto import (  # noqa: E402
     LIST_CHANGED, PROTOCOL_VERSION, READ_TIMEOUT, VERSION,
-    LineReader, McpError, resolve_command, tools_digest,
+    LineReader, McpError, initialize_session, resolve_command, shutdown,
+    tools_digest,
 )
 
 
@@ -160,22 +161,7 @@ class McpClient:
     # ---------- MCP methods ----------
 
     def initialize(self) -> None:
-        result = self.request("initialize", {
-            "protocolVersion": self.protocol_version,
-            "capabilities": {},
-            "clientInfo": {"name": "mcp-purple-lab", "version": VERSION},
-        }) or {}
-        # The client proposes; the server's answer is authoritative for the
-        # rest of the session, exactly as the spec says.
-        negotiated = result.get("protocolVersion")
-        if isinstance(negotiated, str) and negotiated:
-            self.protocol_version = negotiated
-        self.server_info = result.get("serverInfo") or {}
-        self.trace.record("lab", "handshake",
-                          protocol=self.protocol_version,
-                          server=self.server_info.get("name"),
-                          server_version=self.server_info.get("version"))
-        self.notify("notifications/initialized")
+        initialize_session(self)
 
     def list_tools(self, reason: str | None = None) -> list[dict]:
         def enrich(result: dict) -> dict:
@@ -218,30 +204,4 @@ class McpClient:
         return result
 
     def close(self) -> None:
-        """Shut down without letting a stubborn child hold the runner.
-
-        Closing stdin is the polite signal (a stdio server exits its read loop);
-        terminate/kill are the guarantees. The old close() closed stdout first,
-        which can race the reader thread into a second, unrelated traceback.
-        """
-        try:
-            if self.proc.stdin and not self.proc.stdin.closed:
-                self.proc.stdin.close()
-        except OSError:
-            pass
-        try:
-            self.proc.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            self.proc.terminate()
-            try:
-                self.proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self._kill()
-                self.proc.wait(timeout=2)
-        for pipe in (self.proc.stdout, self.proc.stderr):
-            try:
-                if pipe and not pipe.closed:
-                    pipe.close()
-            except OSError:
-                pass
-        self._stderr_thread.join(timeout=1.0)
+        shutdown(self.proc, self._stderr_thread)

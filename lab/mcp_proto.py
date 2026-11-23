@@ -12,6 +12,7 @@ import json
 import os
 import queue
 import shlex
+import subprocess
 import sys
 import threading
 
@@ -106,3 +107,59 @@ class LineReader:
             raise TimeoutError(
                 f"no response from MCP server within {timeout:g}s") from None
         return "" if item is _EOF else item
+
+
+def initialize_session(client) -> None:
+    """Perform the MCP handshake and record what the server agreed to.
+
+    Kept beside the transport, not inside McpClient, because the 220-line CI
+    contract leaves the client no room for prose and because a second client
+    implementation (a harness adapter) should not re-derive the handshake.
+    """
+    result = client.request("initialize", {
+        "protocolVersion": client.protocol_version,
+        "capabilities": {},
+        "clientInfo": {"name": "mcp-purple-lab", "version": VERSION},
+    }) or {}
+    negotiated = result.get("protocolVersion")
+    if isinstance(negotiated, str) and negotiated:
+        client.protocol_version = negotiated
+    client.server_info = result.get("serverInfo") or {}
+    client.trace.record("lab", "handshake",
+                        protocol=client.protocol_version,
+                        server=client.server_info.get("name"),
+                        server_version=client.server_info.get("version"))
+    client.notify("notifications/initialized")
+
+
+def shutdown(proc, stderr_thread: threading.Thread,
+             timeout: float = 2.0) -> None:
+    """Close stdin, then escalate wait -> terminate -> kill.
+
+    Closing stdin is the polite signal: a stdio server exits its read loop. The
+    rest is the guarantee that a wedged child cannot hold a CI runner open.
+    """
+    try:
+        if proc.stdin and not proc.stdin.closed:
+            proc.stdin.close()
+    except OSError:
+        pass
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.terminate()
+        try:
+            proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            try:
+                proc.kill()
+            except OSError:
+                pass
+            proc.wait(timeout=timeout)
+    for pipe in (proc.stdout, proc.stderr):
+        try:
+            if pipe and not pipe.closed:
+                pipe.close()
+        except OSError:
+            pass
+    stderr_thread.join(timeout=1.0)
