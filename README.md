@@ -6,6 +6,8 @@
 
 <p align="center">
   <a href="https://github.com/XenoCyber0/mcp-purple-lab/actions/workflows/ci.yml"><img src="https://github.com/XenoCyber0/mcp-purple-lab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/XenoCyber0/mcp-purple-lab/releases/tag/v2.0.0"><img src="https://img.shields.io/badge/release-v2.0.0-6f42c1" alt="v2.0.0"></a>
+  <a href="https://github.com/XenoCyber0/mcp-purple-lab/blob/main/docs/HARNESSES.md"><img src="https://img.shields.io/badge/harness-stdio-2ea44f" alt="stdio harness compatible"></a>
   <img src="https://img.shields.io/github/stars/XenoCyber0/mcp-purple-lab?style=flat&color=indigo" alt="Stars">
   <img src="https://img.shields.io/github/forks/XenoCyber0/mcp-purple-lab?style=flat&color=orange" alt="Forks">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
@@ -75,7 +77,7 @@ tool-poisoning-001                              -                 -             
 [X] expected rule fired · [x] another rule also fired · MISSED = expected rule did NOT fire
 ```
 
-**3 / 3 attacks detected · benign control fires nothing · 7 / 7 tests green**
+**3 / 3 attacks detected · benign control fires nothing · 36 / 36 tests green**
 
 ---
 
@@ -132,7 +134,7 @@ itself is stdlib + PyYAML.
 git clone https://github.com/XenoCyber0/mcp-purple-lab.git && cd mcp-purple-lab
 pip install pyyaml                        # the only dependency
 python lab/summary.py                     # all scenarios + coverage matrix
-python -m unittest discover -s tests -v   # 7/7 green
+python -m unittest discover -s tests -v   # 36/36 green
 ```
 
 ### 🚦 Exit codes — it's a CI gate
@@ -143,6 +145,27 @@ python -m unittest discover -s tests -v   # 7/7 green
 | ❌ `1` | attack **undetected** *or* control false-positived → **your rules regressed, the build fails** |
 | ⚠️ `2` | setup failure (bad scenario, server wouldn't start) |
 
+### 🔌 Harness compatibility — v2
+
+The servers speak newline-delimited JSON-RPC 2.0 over stdio, the contract every
+MCP client uses. The framing is CI-tested (`tests/test_v2.py`): all four servers
+answer a pipelined `initialize` + `tools/list` handshake with string ids, and the
+client accepts integer or string ids, interleaved notifications, and out-of-order
+replies.
+
+| harness | config root | sample |
+|---|---|---|
+| Claude Desktop, Claude Code, Cursor, Windsurf, Cline, Continue, Roo Code | `mcpServers` | `examples/harnesses/mcp.json` |
+| VS Code (Copilot) | `servers` + `type: stdio` | `examples/harnesses/vscode.json` |
+| Zed | `context_servers` | `examples/harnesses/zed.json` |
+| Goose | `extensions` | `docs/HARNESSES.md` |
+| CI runners | exit codes + JSON | `python lab/run.py <scenario> --format json` |
+
+Full matrix, paths, and copy-paste blocks: [`docs/HARNESSES.md`](docs/HARNESSES.md).
+The GUI clients were not launched in CI; the stdio framing they use is what the
+test exercises. Exit codes stay `0` detected/clean, `1` missed or false positive,
+`2` setup failure.
+
 ### ✍️ Write your own attack in 20 lines
 
 Drop a `scenario.yaml` in `lab/scenarios/`, add a rule in `lab/rules/`, add a test in `tests/`. That's the whole contract — no framework magic, stdlib + PyYAML, deterministic traces.
@@ -151,9 +174,9 @@ Drop a `scenario.yaml` in `lab/scenarios/`, add a rule in `lab/rules/`, add a te
 
 - [ ] Drive the agent from a **real LLM** instead of a scripted call list
 - [ ] More scenarios: permission escalation via tool chains, cross-server confused deputy, memory/context poisoning
-- [ ] Severity-weighted coverage scoring instead of pass/fail
+- [x] Severity-weighted coverage scoring instead of pass/fail
 - [ ] Formal MITRE ATLAS IDs in reports
-- [ ] SIEM export (Sigma decoders) from the trace
+- [x] SIEM export (Sigma rules) from the trace
 - [ ] Harness API to probe **your own** MCP server with the same contract
 
 ---

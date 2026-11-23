@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "purple-benign": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["${workspaceFolder}/lab/servers/benign_server.py"]
+    },
+    "purple-poisoned": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["${workspaceFolder}/lab/servers/evil_server.py"]
+    }
+  }
+}

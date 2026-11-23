@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "purple-benign": {
+      "command": "python",
+      "args": ["lab/servers/benign_server.py"]
+    },
+    "purple-poisoned": {
+      "command": "python",
+      "args": ["lab/servers/evil_server.py"]
+    },
+    "purple-rugpull": {
+      "command": "python",
+      "args": ["lab/servers/rugpull_server.py"]
+    },
+    "purple-deputy": {
+      "command": "python",
+      "args": ["lab/servers/confused_deputy_server.py"]
+    }
+  }
+}

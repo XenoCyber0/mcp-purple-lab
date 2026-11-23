@@ -9,6 +9,7 @@ Runs every scenario through run.py's pipeline and asserts the loop works:
 """
 import os
 import sys
+import tempfile
 import unittest
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -78,17 +79,24 @@ class TestRuleEngine(unittest.TestCase):
         self.assertTrue(all(not r["fired"] for r in results))
 
     def test_evidence_lines_exist(self):
-        """Trace lines cited by a rule must exist in the trace file."""
-        for f in os.listdir(os.path.join(REPO, "out")):
-            if not f.endswith(".trace.jsonl"):
+        """Regenerate the traces, then prove every cited line is in range."""
+        rules = load_rules(os.path.join(REPO, "lab", "rules"))
+        for name in sorted(os.listdir(SCEN_DIR)):
+            if not name.endswith(".yaml"):
                 continue
-            entries = read_trace(os.path.join(REPO, "out", f))
-            rules = load_rules(os.path.join(REPO, "lab", "rules"))
-            for result in evaluate_all(rules, entries):
-                for line in result["trace_lines"]:
-                    self.assertGreater(line, 0)
-                    self.assertLessEqual(line, len(entries),
-                                         f"{f}: line {line} out of range")
+            with tempfile.TemporaryDirectory() as tmp:
+                report = runner.run_scenario(
+                    os.path.join(SCEN_DIR, name), out_dir=tmp)
+                self.assertIsNone(report["error"], report["error"])
+                trace_path = os.path.join(
+                    tmp, report["scenario"] + ".trace.jsonl")
+                entries = read_trace(trace_path)
+                for result in evaluate_all(rules, entries):
+                    for line in result["trace_lines"]:
+                        self.assertGreater(line, 0)
+                        self.assertLessEqual(
+                            line, len(entries),
+                            f"{name}: line {line} out of range")
 
 
 if __name__ == "__main__":

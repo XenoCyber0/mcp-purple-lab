@@ -1,6 +1,6 @@
 [project]
 name = "mcp-purple-lab"
-version = "0.1.0"
+version = "2.0.0"
 description = "Close the purple-team loop for MCP: emulate an attack, capture telemetry, evaluate detection rules, prove from trace evidence."
 license = { text = "MIT" }
 requires-python = ">=3.11"

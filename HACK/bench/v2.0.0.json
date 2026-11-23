@@ -1,0 +1,49 @@
+{
+  "schema": "mcp-purple-lab.bench/1",
+  "platform": "Windows 11, Python 3.11.9, MSYS bash",
+  "method": {
+    "summary": "median of 3 subprocess runs",
+    "suite": "median of 3 subprocess runs",
+    "scenario": "median of 5 subprocess runs per scenario",
+    "engine": "mean of 2000 evaluate_all calls on the largest regenerated trace",
+    "note": "Scenario wall time is interpreter-startup bound; the engine figure is the rule-evaluation win."
+  },
+  "baseline": {
+    "label": "v0.1.0",
+    "commit": "fcfbc99",
+    "summary_s": 0.644,
+    "suite_s": 1.18,
+    "suite_tests": 21,
+    "scenario_s": {
+      "benign_control": 0.284,
+      "confused_deputy": 0.282,
+      "schema_rugpull": 0.295,
+      "tool_poisoning": 0.285
+    },
+    "evaluate_all_us": 91.9,
+    "trace_lines": 19,
+    "rule_count": 4
+  },
+  "v2": {
+    "label": "2.0.0",
+    "commit": "cd709c0",
+    "summary_s": 0.568,
+    "suite_s": 3.745,
+    "suite_tests": 36,
+    "scenario_s": {
+      "benign_control": 0.273,
+      "confused_deputy": 0.272,
+      "schema_rugpull": 0.279,
+      "tool_poisoning": 0.275
+    },
+    "evaluate_all_us": 75.41,
+    "trace_lines": 20,
+    "rule_count": 4
+  },
+  "delta": {
+    "summary_pct": 11.8,
+    "scenario_median_ms": -10.5,
+    "scenario_pct": -3.7,
+    "evaluate_all_per_line_pct": 22.0
+  }
+}

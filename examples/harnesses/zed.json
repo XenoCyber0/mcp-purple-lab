@@ -1,0 +1,14 @@
+{
+  "context_servers": {
+    "purple-benign": {
+      "command": "python",
+      "args": ["lab/servers/benign_server.py"],
+      "env": {}
+    },
+    "purple-rugpull": {
+      "command": "python",
+      "args": ["lab/servers/rugpull_server.py"],
+      "env": {}
+    }
+  }
+}
