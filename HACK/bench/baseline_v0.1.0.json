@@ -1,0 +1,31 @@
+{
+  "tag": "v0.1.0-baseline",
+  "python": "C:\\Users\\PC\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\\python.exe",
+  "captured": "2026-11-22",
+  "results": {
+    "benign_control": {
+      "wall_s": 0.398,
+      "exit": 0
+    },
+    "confused_deputy": {
+      "wall_s": 0.33,
+      "exit": 0
+    },
+    "schema_rugpull": {
+      "wall_s": 0.332,
+      "exit": 0
+    },
+    "tool_poisoning": {
+      "wall_s": 0.32,
+      "exit": 0
+    },
+    "summary_matrix": {
+      "wall_s": 0.746,
+      "exit": 0
+    },
+    "unittest_suite": {
+      "wall_s": 1.318,
+      "exit": 0
+    }
+  }
+}

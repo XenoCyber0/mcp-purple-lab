@@ -15,8 +15,6 @@ No MCP SDK, no network, no LLM. Deterministic.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import os
 import subprocess
 import sys
@@ -28,46 +26,23 @@ sys.path.insert(0, HERE)
 
 from trace import Trace, excerpt  # noqa: E402
 from rpc_stdio import RpcError, StdioRpc  # noqa: E402
-
-LIST_CHANGED = "notifications/tools/list_changed"
-
-
-def resolve_command(cmd: str) -> list[str]:
-    """`python foo.py` -> [<this interpreter>, foo.py] on EVERY OS.
-
-    Resolving to sys.executable everywhere (not only on Windows) keeps a Linux
-    CI runner spawning the interpreter actually running the lab, venv
-    included, instead of whatever bare `python` happens to be on PATH.
-    """
-    parts = cmd.split()
-    if parts and parts[0] in ("python", "python3"):
-        return [sys.executable] + parts[1:]
-    return parts
-
-
-def tools_digest(tools: list[dict]) -> str:
-    """SHA-256 over the canonical tool list: sorted by name, keys sorted.
-
-    Sorting by name means a server merely reordering an otherwise identical
-    list is NOT drift; adding, removing, or changing any field of any tool IS.
-    A digest over the FULL list cannot be evaded by appending a tool past a
-    200-char preview window, which is how a real rug-pull actually lands.
-    """
-    canon = json.dumps(sorted(tools, key=lambda t: t.get("name", "")),
-                       sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
-
-
-class McpError(Exception):
-    pass
+from mcp_proto import (  # noqa: E402
+    LIST_CHANGED, PROTOCOL_VERSION, READ_TIMEOUT, VERSION,
+    LineReader, McpError, resolve_command, tools_digest,
+)
 
 
 class McpClient:
     """A spawned MCP server we can call tools on."""
 
-    def __init__(self, server_cmd: str, trace: Trace, cwd: str | None = None,
+    def __init__(self, server_cmd, trace: Trace, cwd: str | None = None,
+                 timeout: float = READ_TIMEOUT,
+                 protocol_version: str = PROTOCOL_VERSION,
                  rescan_on_list_changed: bool = True):
         self.trace = trace
+        self.timeout = float(timeout)
+        self.protocol_version = protocol_version
+        self.server_info: dict = {}
         self._id = 0
         self._stderr_lines: list[str] = []
         self._rescan_pending = False
@@ -78,6 +53,9 @@ class McpClient:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
             cwd=cwd,
         )
         # Drain stderr on a daemon thread. Without this a chatty server fills
@@ -91,8 +69,11 @@ class McpClient:
         def _write(line: str) -> None:
             self.proc.stdin.write(line)
             self.proc.stdin.flush()
-        self.rpc = StdioRpc(_write, self.proc.stdout.readline,
-                            on_notification=self._on_notification)
+        self._reader = LineReader(self.proc.stdout)
+        self.rpc = StdioRpc(_write,
+                            lambda: self._reader.readline(self.timeout),
+                            on_notification=self._on_notification,
+                            on_server_request=self._on_server_request)
         self.tools: list[dict] = []
         self.initialize()
 
@@ -108,11 +89,26 @@ class McpClient:
     def stderr_tail(self, limit: int = 12) -> str:
         return " | ".join(self._stderr_lines[-limit:])
 
+    def _kill(self) -> None:
+        try:
+            self.proc.kill()
+        except OSError:
+            pass
+
     def _on_notification(self, msg: dict) -> None:
         method = msg.get("method", "notification.unknown")
         self.trace.record("in", method, params=msg.get("params"))
         if method == LIST_CHANGED and self.rescan_on_list_changed:
             self._rescan_pending = True
+
+    def _on_server_request(self, msg: dict) -> None:
+        """A server asking US a question (roots/list, sampling/...).
+
+        The transport already answered -32601; recording it turns a silent
+        stream oddity into evidence a reviewer can see in the trace.
+        """
+        self.trace.record("in", "server.request", method=msg.get("method"),
+                          params=excerpt(msg.get("params") or {}))
 
     # ---------- plumbing ----------
 
@@ -130,6 +126,10 @@ class McpClient:
         try:
             self.rpc.send(msg)
             resp = self.rpc.read_until(rid)
+        except TimeoutError as exc:
+            self._kill()
+            raise McpError(f"{method}: {exc}; server killed. "
+                           f"stderr: {self.stderr_tail()[:300]}") from exc
         except OSError as exc:
             raise McpError(f"write failed: {exc}") from exc
         except RpcError as exc:
@@ -160,11 +160,21 @@ class McpClient:
     # ---------- MCP methods ----------
 
     def initialize(self) -> None:
-        self.request("initialize", {
-            "protocolVersion": "2024-11-05",
+        result = self.request("initialize", {
+            "protocolVersion": self.protocol_version,
             "capabilities": {},
-            "clientInfo": {"name": "mcp-purple-lab", "version": "0.1.0"},
-        })
+            "clientInfo": {"name": "mcp-purple-lab", "version": VERSION},
+        }) or {}
+        # The client proposes; the server's answer is authoritative for the
+        # rest of the session, exactly as the spec says.
+        negotiated = result.get("protocolVersion")
+        if isinstance(negotiated, str) and negotiated:
+            self.protocol_version = negotiated
+        self.server_info = result.get("serverInfo") or {}
+        self.trace.record("lab", "handshake",
+                          protocol=self.protocol_version,
+                          server=self.server_info.get("name"),
+                          server_version=self.server_info.get("version"))
         self.notify("notifications/initialized")
 
     def list_tools(self, reason: str | None = None) -> list[dict]:
@@ -176,7 +186,7 @@ class McpClient:
             if reason:
                 fields["reason"] = reason
             return fields
-        result = self.request("tools/list", enrich=enrich)
+        result = self.request("tools/list", enrich=enrich) or {}
         self.tools = result.get("tools", [])
         return self.tools
 
@@ -189,6 +199,9 @@ class McpClient:
             self.rpc.send({"jsonrpc": "2.0", "id": rid, "method": "tools/call",
                            "params": {"name": name, "arguments": arguments}})
             resp = self.rpc.read_until(rid)
+        except TimeoutError as exc:
+            self._kill()
+            raise McpError(f"tools/call {name}: {exc}; server killed") from exc
         except OSError as exc:
             raise McpError(f"write failed: {exc}") from exc
         except RpcError as exc:
@@ -205,15 +218,30 @@ class McpClient:
         return result
 
     def close(self) -> None:
-        for pipe in (self.proc.stdin, self.proc.stdout, self.proc.stderr):
+        """Shut down without letting a stubborn child hold the runner.
+
+        Closing stdin is the polite signal (a stdio server exits its read loop);
+        terminate/kill are the guarantees. The old close() closed stdout first,
+        which can race the reader thread into a second, unrelated traceback.
+        """
+        try:
+            if self.proc.stdin and not self.proc.stdin.closed:
+                self.proc.stdin.close()
+        except OSError:
+            pass
+        try:
+            self.proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.proc.terminate()
+            try:
+                self.proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self._kill()
+                self.proc.wait(timeout=2)
+        for pipe in (self.proc.stdout, self.proc.stderr):
             try:
                 if pipe and not pipe.closed:
                     pipe.close()
             except OSError:
                 pass
-        try:
-            self.proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            self.proc.kill()
-            self.proc.wait(timeout=2)
-        self._stderr_thread.join(timeout=2.0)
+        self._stderr_thread.join(timeout=1.0)
